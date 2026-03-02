@@ -1,0 +1,180 @@
+export interface SummaryCardData {
+    id: string;
+    label: string;
+    value: string;
+    delta: string;
+    trending: 'up' | 'down';
+    iconBg: string;
+}
+
+export interface BalancePoint {
+    label: string;
+    balance: number;
+    equity: number;
+}
+
+export interface Trade {
+    id: string;
+    symbol: string;
+    side: 'Buy' | 'Sell';
+    entryPrice: number;
+    exitPrice: number;
+    quantity: number;
+    pnl: number;
+    pnlPercent: number;
+    date: string;
+    status: 'won' | 'lost' | 'open';
+}
+
+export const summaryCards: SummaryCardData[] = [
+    {
+        id: 'total-balance',
+        label: 'Total Balance',
+        value: '$124,582.50',
+        delta: '+12.5%',
+        trending: 'up',
+        iconBg: 'bg-accent-info-bg dark:bg-accent-info/20',
+    },
+    {
+        id: 'monthly-pnl',
+        label: 'Monthly P&L',
+        value: '+$8,240.00',
+        delta: '+18.2%',
+        trending: 'up',
+        iconBg: 'bg-accent-success-bg dark:bg-accent-success/20',
+    },
+    {
+        id: 'win-rate',
+        label: 'Win Rate',
+        value: '68.4%',
+        delta: '+3.1%',
+        trending: 'up',
+        iconBg: 'bg-accent-success-bg dark:bg-accent-success/20',
+    },
+    {
+        id: 'open-positions',
+        label: 'Open Positions',
+        value: '5',
+        delta: '-2',
+        trending: 'down',
+        iconBg: 'bg-secondary-100 dark:bg-secondary-700/30',
+    },
+];
+
+export const weeklyBalance: BalancePoint[] = [
+    { label: 'Mon', balance: 118400, equity: 116200 },
+    { label: 'Tue', balance: 119800, equity: 117500 },
+    { label: 'Wed', balance: 121200, equity: 119800 },
+    { label: 'Thu', balance: 120100, equity: 118400 },
+    { label: 'Fri', balance: 122600, equity: 121000 },
+    { label: 'Sat', balance: 123800, equity: 122200 },
+    { label: 'Sun', balance: 124582, equity: 123100 },
+];
+
+export const monthlyBalance: BalancePoint[] = [
+    { label: 'Sep', balance: 98500, equity: 96200 },
+    { label: 'Oct', balance: 104200, equity: 101800 },
+    { label: 'Nov', balance: 108900, equity: 106500 },
+    { label: 'Dec', balance: 112400, equity: 110200 },
+    { label: 'Jan', balance: 118200, equity: 115800 },
+    { label: 'Feb', balance: 124582, equity: 123100 },
+];
+
+export const recentTrades: Trade[] = [
+    {
+        id: 'TRD-001',
+        symbol: 'AAPL',
+        side: 'Buy',
+        entryPrice: 178.25,
+        exitPrice: 185.40,
+        quantity: 50,
+        pnl: 357.5,
+        pnlPercent: 4.01,
+        date: 'Feb 28, 2026',
+        status: 'won',
+    },
+    {
+        id: 'TRD-002',
+        symbol: 'TSLA',
+        side: 'Sell',
+        entryPrice: 242.8,
+        exitPrice: 235.1,
+        quantity: 30,
+        pnl: 231.0,
+        pnlPercent: 3.17,
+        date: 'Feb 27, 2026',
+        status: 'won',
+    },
+    {
+        id: 'TRD-003',
+        symbol: 'NVDA',
+        side: 'Buy',
+        entryPrice: 890.5,
+        exitPrice: 875.2,
+        quantity: 10,
+        pnl: -153.0,
+        pnlPercent: -1.72,
+        date: 'Feb 26, 2026',
+        status: 'lost',
+    },
+    {
+        id: 'TRD-004',
+        symbol: 'MSFT',
+        side: 'Buy',
+        entryPrice: 415.3,
+        exitPrice: 428.75,
+        quantity: 25,
+        pnl: 336.25,
+        pnlPercent: 3.24,
+        date: 'Feb 25, 2026',
+        status: 'won',
+    },
+    {
+        id: 'TRD-005',
+        symbol: 'AMZN',
+        side: 'Sell',
+        entryPrice: 185.6,
+        exitPrice: 190.2,
+        quantity: 40,
+        pnl: -184.0,
+        pnlPercent: -2.48,
+        date: 'Feb 24, 2026',
+        status: 'lost',
+    },
+    {
+        id: 'TRD-006',
+        symbol: 'META',
+        side: 'Buy',
+        entryPrice: 485.0,
+        exitPrice: 502.3,
+        quantity: 15,
+        pnl: 259.5,
+        pnlPercent: 3.57,
+        date: 'Feb 23, 2026',
+        status: 'won',
+    },
+    {
+        id: 'TRD-007',
+        symbol: 'GOOGL',
+        side: 'Buy',
+        entryPrice: 165.4,
+        exitPrice: 0,
+        quantity: 60,
+        pnl: 0,
+        pnlPercent: 0,
+        date: 'Mar 01, 2026',
+        status: 'open',
+    },
+    {
+        id: 'TRD-008',
+        symbol: 'SPY',
+        side: 'Sell',
+        entryPrice: 512.8,
+        exitPrice: 508.3,
+        quantity: 20,
+        pnl: 90.0,
+        pnlPercent: 0.88,
+        date: 'Feb 22, 2026',
+        status: 'won',
+    },
+];
