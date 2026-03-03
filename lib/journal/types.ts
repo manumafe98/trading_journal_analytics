@@ -46,20 +46,21 @@ export interface Trade {
     source?: 'manual' | 'pdf';
 
     // ── Notion Table columns ──
-    executable?: boolean;          // Ejecutable — is the trade setup valid?
-    htfDirection?: 'Long' | 'Short' | 'Neutral'; // Dirección HTF
-    ltfDirection?: 'Long' | 'Short' | 'Neutral'; // Dirección LTF
-    pullback?: boolean;            // Pullback occurrence
-    entryType?: string;            // Entrada — e.g. 'OB', 'BOS', 'FVG'
-    targetPrice?: number;          // Target price level
-    targetMax?: number;            // Target Max — highest level reached
-    targetMaxFinal?: number;       // Target Max Final
-    proud?: boolean;               // Orgulloso — proud of the trade?
-    wouldReenter?: boolean;        // ¿Volvería a entrar?
+    executable?: string;           // Ejecutable — 'Sí' | 'No'
+    htfDirection?: string;         // Dirección HTF — 'Long' | 'Short' | 'Lateral'
+    ltfDirection?: string;         // Dirección LTF
+    pullback?: string;             // Pullback — '0.38' | '0.5' | '0.61' | '0.7'
+    entryType?: string;            // Entrada — 'Diagonal 1m' | 'Diagonal 30s' | 'Limit'
+    targetPrice?: string;          // Target — texto libre (e.g. 'OB 1.1050')
+    targetMax?: string;            // Target Max — texto libre
+    targetMaxFinal?: string;       // Target Max Final — 'Sí' | 'No'
+    durationText?: string;         // Duración manual — e.g. '2h30m', '45min'
+    proud?: string;                // Orgulloso — 'Sí' | 'No'
+    wouldReenter?: string;         // ¿Volvería a entrar? — 'Sí' | 'No'
     howContinued?: string;         // ¿Cómo siguió el precio?
-    management?: string;           // Gestión — management notes
-    correctManagement?: boolean;   // Gestión Correcta
-    againstChecklist?: string;     // En contra/Checklist — what went against plan
+    management?: string;           // Gestión
+    correctManagement?: string;    // Gestión Correcta — EMA option
+    againstChecklist?: string;     // En contra/Checklist
 }
 
 export interface JournalStore {

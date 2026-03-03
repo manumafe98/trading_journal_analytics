@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { PlusIcon, Trash2Icon, CheckIcon, MinusIcon } from 'lucide-react';
+import { PlusIcon, Trash2Icon } from 'lucide-react';
 import type { Trade, TradeResult } from '@/lib/journal/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Column Definitions
 // ──────────────────────────────────────────────────────────────────────────────
-type ColType = 'text' | 'number' | 'date' | 'time' | 'select' | 'boolean' | 'calc';
+type ColType = 'text' | 'number' | 'date' | 'time' | 'select' | 'calc';
 
 interface ColDef {
     key: string;
@@ -19,28 +19,30 @@ interface ColDef {
     readOnly?: boolean;
 }
 
+const GEST_OPTIONS = ['—', 'No', 'EMA 5m', 'EMA 1m', 'EMA 15m', 'EMA 1h'];
+
 const COLUMNS: ColDef[] = [
     { key: 'symbol', label: 'Par', type: 'text', width: 80, placeholder: 'EURUSD' },
     { key: 'entryDate', label: 'Fecha', type: 'date', width: 110 },
     { key: 'entryTime', label: 'Hora Ejecución', type: 'time', width: 90 },
-    { key: 'executable', label: 'Ejecutable', type: 'boolean', width: 82 },
-    { key: 'htfDirection', label: 'Dirección (HTF)', type: 'select', width: 112, options: ['—', 'Long', 'Short', 'Neutral'] },
-    { key: 'ltfDirection', label: '(LTF)', type: 'select', width: 90, options: ['—', 'Long', 'Short', 'Neutral'] },
-    { key: 'side', label: 'Dirección', type: 'select', width: 90, options: ['Buy', 'Sell'] },
-    { key: 'pullback', label: 'Pullback', type: 'boolean', width: 80 },
-    { key: 'entryType', label: 'Entrada', type: 'text', width: 90, placeholder: 'OB, BOS…' },
+    { key: 'executable', label: 'Ejecutable', type: 'select', width: 88, options: ['—', 'Sí', 'No'] },
+    { key: 'htfDirection', label: 'Dirección (HTF)', type: 'select', width: 115, options: ['—', 'Long', 'Short', 'Lateral'] },
+    { key: 'ltfDirection', label: '(LTF)', type: 'select', width: 90, options: ['—', 'Long', 'Short', 'Lateral'] },
+    { key: 'side', label: 'Dirección', type: 'select', width: 90, options: ['Long', 'Short'] },
+    { key: 'pullback', label: 'Pullback', type: 'select', width: 82, options: ['—', '0.38', '0.5', '0.61', '0.7'] },
+    { key: 'entryType', label: 'Entrada', type: 'select', width: 115, options: ['—', 'Diagonal 1m', 'Diagonal 30s', 'Limit'] },
     { key: 'rrObtained', label: 'RR', type: 'number', width: 64, placeholder: '1.5' },
-    { key: 'targetPrice', label: 'Target', type: 'number', width: 80, placeholder: '1.1050' },
+    { key: 'targetPrice', label: 'Target', type: 'text', width: 110, placeholder: 'OB 1.1050…' },
     { key: 'result', label: 'Resultado', type: 'select', width: 90, options: ['—', 'TP', 'SL', 'BE', 'Running'] },
-    { key: '_duration', label: 'Duración', type: 'calc', width: 80, readOnly: true },
-    { key: 'targetMax', label: 'Target Max', type: 'number', width: 88, placeholder: '0' },
-    { key: 'targetMaxFinal', label: 'Target Max Final', type: 'number', width: 108, placeholder: '0' },
+    { key: 'durationText', label: 'Duración', type: 'text', width: 80, placeholder: '2h30m' },
+    { key: 'targetMax', label: 'Target Max', type: 'text', width: 110, placeholder: '2° objetivo…' },
+    { key: 'targetMaxFinal', label: 'Target Max Final', type: 'select', width: 108, options: ['—', 'Sí', 'No'] },
     { key: 'pnl', label: 'PnL', type: 'number', width: 88, placeholder: '0' },
-    { key: 'proud', label: 'Orgulloso', type: 'boolean', width: 82 },
-    { key: 'wouldReenter', label: '¿Volvería a entrar?', type: 'boolean', width: 100 },
-    { key: 'howContinued', label: '¿Cómo siguió…?', type: 'text', width: 130, placeholder: 'Continuó la tendencia…' },
-    { key: 'management', label: 'Gestión', type: 'text', width: 110, placeholder: 'Notas…' },
-    { key: 'correctManagement', label: 'Gestión Correcta', type: 'boolean', width: 104 },
+    { key: 'proud', label: 'Orgulloso', type: 'select', width: 88, options: ['—', 'Sí', 'No'] },
+    { key: 'wouldReenter', label: '¿Volvería a entrar?', type: 'select', width: 100, options: ['—', 'Sí', 'No'] },
+    { key: 'howContinued', label: '¿Cómo siguió…?', type: 'select', width: 110, options: ['—', 'A favor', 'En contra'] },
+    { key: 'management', label: 'Gestión', type: 'select', width: 110, options: GEST_OPTIONS },
+    { key: 'correctManagement', label: 'Gestión Correcta', type: 'select', width: 115, options: GEST_OPTIONS },
     { key: 'errorNotes', label: 'Error', type: 'text', width: 110, placeholder: 'Ninguno…' },
     { key: 'againstChecklist', label: 'En contra/Chequ…', type: 'text', width: 125, placeholder: 'Checklist fallida…' },
 ];
@@ -59,7 +61,7 @@ function calcDuration(trade: Trade): string {
 
 function getCellRawValue(trade: Trade, key: string): string {
     if (key === '_duration') return calcDuration(trade);
-    const v = (trade as Record<string, unknown>)[key];
+    const v = (trade as unknown as Record<string, unknown>)[key];
     if (v === undefined || v === null) return '';
     return String(v);
 }
@@ -74,7 +76,6 @@ function derivedStatus(result: string, pnl: number): Trade['status'] {
 
 function parseColValue(col: ColDef, raw: string) {
     if (col.type === 'number') return raw === '' ? undefined : parseFloat(raw.replace(',', '.')) || 0;
-    if (col.type === 'boolean') return raw === 'true';
     if (raw === '—' || raw === '') return undefined;
     return raw;
 }
@@ -84,32 +85,25 @@ function parseColValue(col: ColDef, raw: string) {
 // ──────────────────────────────────────────────────────────────────────────────
 function CellDisplay({ trade, col }: { trade: Trade; col: ColDef }) {
     const raw = getCellRawValue(trade, col.key);
+    const empty = !raw || raw === '—' || raw === 'undefined' || raw === '';
 
-    if (col.type === 'boolean') {
-        const checked = (trade as Record<string, unknown>)[col.key] === true;
-        return (
-            <div className="flex items-center justify-center">
-                {checked
-                    ? <CheckIcon className="h-3.5 w-3.5 text-primary-500" />
-                    : <MinusIcon className="h-3 w-3 text-gray-200 dark:text-gray-600" />}
-            </div>
-        );
-    }
-
+    // Direction (trade side): Long/Short badges
     if (col.key === 'side') {
-        if (!raw) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        const isLong = raw === 'Long' || raw === 'Buy';
         return (
-            <span className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-semibold ${raw === 'Buy'
+            <span className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-semibold ${isLong
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                 }`}>
-                {raw === 'Buy' ? '▲' : '▼'} {raw === 'Buy' ? 'Long' : 'Short'}
+                {isLong ? '▲ Long' : '▼ Short'}
             </span>
         );
     }
 
+    // HTF/LTF direction badges
     if (col.key === 'htfDirection' || col.key === 'ltfDirection') {
-        if (!raw || raw === '—' || raw === 'undefined') return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
         return (
             <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${raw === 'Long'
                 ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400'
@@ -122,15 +116,13 @@ function CellDisplay({ trade, col }: { trade: Trade; col: ColDef }) {
         );
     }
 
+    // Result badges
     if (col.key === 'result') {
-        if (!raw || raw === '—' || raw === 'undefined') return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
         return (
-            <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${raw === 'TP'
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : raw === 'SL'
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    : raw === 'BE'
-                        ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+            <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${raw === 'TP' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : raw === 'SL' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    : raw === 'BE' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                         : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                 }`}>
                 {raw}
@@ -138,25 +130,56 @@ function CellDisplay({ trade, col }: { trade: Trade; col: ColDef }) {
         );
     }
 
+    // Sí/No columns — colored badges
+    if (['executable', 'proud', 'wouldReenter'].includes(col.key)) {
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        return (
+            <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${raw === 'Sí'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                {raw}
+            </span>
+        );
+    }
+
+    // ¿Cómo siguió? — A favor green, En contra red
+    if (col.key === 'howContinued') {
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        return (
+            <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${raw === 'A favor'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}>
+                {raw}
+            </span>
+        );
+    }
+
+    // PnL — colored number
     if (col.key === 'pnl') {
         const num = parseFloat(raw);
-        if (isNaN(num)) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        if (isNaN(num) || num === 0) return <span className="text-gray-300 dark:text-gray-600">—</span>;
         return (
-            <span className={`font-semibold text-xs ${num > 0 ? 'text-green-500' : num < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+            <span className={`font-semibold text-xs ${num > 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {num > 0 ? '+' : ''}{num.toFixed(2)}
             </span>
         );
     }
 
+    // RR — violet mono
     if (col.key === 'rrObtained') {
-        if (!raw) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
         return <span className="font-mono text-xs text-violet-500 dark:text-violet-400">{raw}</span>;
     }
 
-    if (!raw || raw === 'undefined') {
-        return <span className="text-gray-300 dark:text-gray-600">—</span>;
+    // Pullback — show as a pill
+    if (col.key === 'pullback') {
+        if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        return <span className="font-mono text-xs text-amber-600 dark:text-amber-400">{raw}</span>;
     }
 
+    if (empty) return <span className="text-gray-300 dark:text-gray-600">—</span>;
     return <span className="text-xs text-gray-700 dark:text-gray-300 truncate block max-w-full">{raw}</span>;
 }
 
@@ -168,10 +191,11 @@ interface EditorProps {
     value: string;
     onChange: (v: string) => void;
     onCommit: () => void;
+    onCommitWithValue: (v: string) => void;
     onCancel: () => void;
 }
 
-function CellEditor({ col, value, onChange, onCommit, onCancel }: EditorProps) {
+function CellEditor({ col, value, onChange, onCommit, onCommitWithValue, onCancel }: EditorProps) {
     const ref = useRef<HTMLInputElement & HTMLSelectElement>(null);
 
     useEffect(() => {
@@ -192,9 +216,11 @@ function CellEditor({ col, value, onChange, onCommit, onCancel }: EditorProps) {
         return (
             <select
                 ref={ref as React.RefObject<HTMLSelectElement>}
-                value={value}
-                onChange={(e) => { onChange(e.target.value); setTimeout(onCommit, 50); }}
-                onBlur={onCommit}
+                defaultValue={value}
+                onChange={(e) => {
+                    // Commit directly with the picked value — no async, no blur race
+                    onCommitWithValue(e.target.value);
+                }}
                 onKeyDown={keyDown}
                 className={`${base} cursor-pointer`}
             >
@@ -250,68 +276,90 @@ interface Props {
 
 type EditKey = { tradeId: string; col: string } | null;
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Shared logic: build and dispatch the trade update for a given column + value
+// ──────────────────────────────────────────────────────────────────────────────
+function buildUpdate(col: ColDef, rawValue: string, trade: Trade): Partial<Trade> {
+    const parsed = parseColValue(col, rawValue);
+
+    if (col.key === 'result') {
+        const resultStr = (parsed ?? '') as string;
+        return {
+            result: (resultStr === 'TP' || resultStr === 'SL' || resultStr === 'BE')
+                ? resultStr as TradeResult
+                : undefined,
+            status: derivedStatus(resultStr, trade.pnl),
+        };
+    }
+    if (col.key === 'pnl') {
+        const pnlNum = typeof parsed === 'number' ? parsed : 0;
+        return {
+            pnl: pnlNum,
+            pnlPercent: trade.riskUsd ? (pnlNum / trade.riskUsd) * 100 : 0,
+            status: derivedStatus(trade.result ?? '', pnlNum),
+        };
+    }
+    if (col.key === 'side') {
+        return { side: (rawValue === 'Short' ? 'Sell' : 'Buy') };
+    }
+    return { [col.key]: parsed } as Partial<Trade>;
+}
+
 export function NotionTradeTable({ trades, accountId, onAdd, onUpdate, onDelete }: Props) {
     const [editing, setEditing] = useState<EditKey>(null);
     const [editValue, setEditValue] = useState('');
+    // Ref mirrors editValue so commitEdit always reads the latest — avoids stale closure
+    const editValueRef = useRef('');
     const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
-    // Sort trades by entry date desc
-    const sorted = [...trades].sort(
-        (a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime(),
-    );
+    const setCurrentValue = useCallback((v: string) => {
+        editValueRef.current = v;
+        setEditValue(v);
+    }, []);
+
+    // Trades maintain insertion order (no resorting)
+    const sorted = [...trades];
 
     const startEdit = useCallback((tradeId: string, col: ColDef) => {
         if (col.readOnly || col.type === 'calc') return;
         const trade = trades.find((t) => t.id === tradeId)!;
         const raw = getCellRawValue(trade, col.key);
+        const initial = raw === '—' || raw === 'undefined' ? '' : raw;
+        editValueRef.current = initial;
+        setEditValue(initial);
         setEditing({ tradeId, col: col.key });
-        setEditValue(raw === '—' || raw === 'undefined' ? '' : raw);
     }, [trades]);
 
+    // commitEdit: called for text/number/date/time fields on blur/Enter
     const commitEdit = useCallback(() => {
         if (!editing) return;
         const col = COLUMNS.find((c) => c.key === editing.col)!;
         const trade = trades.find((t) => t.id === editing.tradeId)!;
-
-        let update: Partial<Trade> = {};
-        const parsed = parseColValue(col, editValue);
-
-        if (col.key === 'result') {
-            const resultStr = (parsed ?? '') as string;
-            update = {
-                result: (resultStr === 'TP' || resultStr === 'SL' || resultStr === 'BE')
-                    ? resultStr as TradeResult
-                    : undefined,
-                status: derivedStatus(resultStr, trade.pnl),
-            };
-        } else if (col.key === 'pnl') {
-            const pnlNum = typeof parsed === 'number' ? parsed : 0;
-            update = {
-                pnl: pnlNum,
-                pnlPercent: trade.riskUsd ? (pnlNum / trade.riskUsd) * 100 : 0,
-                status: derivedStatus(trade.result ?? '', pnlNum),
-            };
-        } else if (col.key === 'side') {
-            update = { side: (editValue === 'Sell' ? 'Sell' : 'Buy') };
-        } else {
-            (update as Record<string, unknown>)[col.key] = parsed;
-        }
-
-        onUpdate(editing.tradeId, update);
+        const currentValue = editValueRef.current;
+        onUpdate(editing.tradeId, buildUpdate(col, currentValue, trade));
         setEditing(null);
+        editValueRef.current = '';
         setEditValue('');
-    }, [editing, editValue, trades, onUpdate]);
+    }, [editing, trades, onUpdate]);
+
+    // commitWithValue: called directly by select onChange with the chosen value
+    const commitWithValue = useCallback((pickedValue: string) => {
+        if (!editing) return;
+        const col = COLUMNS.find((c) => c.key === editing.col)!;
+        const trade = trades.find((t) => t.id === editing.tradeId)!;
+        onUpdate(editing.tradeId, buildUpdate(col, pickedValue, trade));
+        setEditing(null);
+        editValueRef.current = '';
+        setEditValue('');
+    }, [editing, trades, onUpdate]);
 
     const cancelEdit = useCallback(() => {
         setEditing(null);
+        editValueRef.current = '';
         setEditValue('');
     }, []);
 
-    const toggleBoolean = useCallback((tradeId: string, key: string) => {
-        const trade = trades.find((t) => t.id === tradeId)!;
-        const current = (trade as Record<string, unknown>)[key] === true;
-        onUpdate(tradeId, { [key]: !current } as Partial<Trade>);
-    }, [trades, onUpdate]);
+
 
     const handleAddRow = useCallback(() => {
         const today = new Date().toISOString().split('T')[0];
@@ -406,7 +454,6 @@ export function NotionTradeTable({ trades, accountId, onAdd, onUpdate, onDelete 
 
                                     {COLUMNS.map((col) => {
                                         const isEditing = editing?.tradeId === trade.id && editing.col === col.key;
-                                        const isBoolean = col.type === 'boolean';
                                         const isCalc = col.type === 'calc';
 
                                         return (
@@ -414,14 +461,9 @@ export function NotionTradeTable({ trades, accountId, onAdd, onUpdate, onDelete 
                                                 key={col.key}
                                                 style={{ width: col.width, minWidth: col.width }}
                                                 onClick={() => {
-                                                    if (isBoolean) { toggleBoolean(trade.id, col.key); return; }
                                                     if (!isCalc) startEdit(trade.id, col);
                                                 }}
-                                                className={`px-2 py-1.5 border-r border-gray-100 dark:border-gray-700 ${isCalc
-                                                    ? 'bg-gray-50/50 dark:bg-gray-700/20 cursor-default'
-                                                    : isBoolean
-                                                        ? 'cursor-pointer'
-                                                        : 'cursor-text'
+                                                className={`px-2 py-1.5 border-r border-gray-100 dark:border-gray-700 ${isCalc ? 'bg-gray-50/50 dark:bg-gray-700/20 cursor-default' : 'cursor-pointer'
                                                     } ${isEditing
                                                         ? 'ring-2 ring-inset ring-primary-400 bg-primary-50/30 dark:bg-primary-900/20'
                                                         : ''
@@ -431,8 +473,9 @@ export function NotionTradeTable({ trades, accountId, onAdd, onUpdate, onDelete 
                                                     <CellEditor
                                                         col={col}
                                                         value={editValue}
-                                                        onChange={setEditValue}
+                                                        onChange={setCurrentValue}
                                                         onCommit={commitEdit}
+                                                        onCommitWithValue={commitWithValue}
                                                         onCancel={cancelEdit}
                                                     />
                                                 ) : (
