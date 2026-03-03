@@ -11,6 +11,7 @@ import { StatsGrid } from './StatsGrid';
 import { NotionTradeTable } from './NotionTradeTable';
 import { ReglasSection } from './ReglasSection';
 import { TradingPlanSection } from './TradingPlanSection';
+import { DashboardOverview } from './DashboardOverview';
 import { EquityCurveChart } from './charts/EquityCurveChart';
 import { DrawdownChart } from './charts/DrawdownChart';
 import { WinLossDonut } from './charts/WinLossDonut';
@@ -39,7 +40,7 @@ export function JournalDashboard({ investorId, investorName, accentColor }: Prop
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [showTradeModal, setShowTradeModal] = useState(false);
     const [showPDFModal, setShowPDFModal] = useState(false);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'reglas' | 'tradingplan'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'backtesting' | 'reglas' | 'tradingplan'>('dashboard');
 
     const account = selectedAccount
         ? store.accounts.find((a) => a.id === selectedAccount.id) ?? null
@@ -130,6 +131,7 @@ export function JournalDashboard({ investorId, investorName, accentColor }: Prop
             <div className="sticky top-[57px] z-10 flex items-center gap-1 border-b border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-5">
                 {([
                     { key: 'dashboard', label: 'Dashboard' },
+                    { key: 'backtesting', label: 'Backtesting' },
                     { key: 'reglas', label: 'Reglas' },
                     { key: 'tradingplan', label: 'Trading Plan' },
                 ] as const).map((tab) => (
@@ -147,9 +149,10 @@ export function JournalDashboard({ investorId, investorName, accentColor }: Prop
             </div>
 
             {/* Content — switches based on active tab */}
+            {activeTab === 'dashboard' && <DashboardOverview account={account} trades={accountTrades} />}
             {activeTab === 'reglas' && <ReglasSection investorName={investorName} />}
             {activeTab === 'tradingplan' && <TradingPlanSection investorName={investorName} />}
-            {activeTab === 'dashboard' && (
+            {activeTab === 'backtesting' && (
                 <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-6 lg:px-8 space-y-6">
 
                     {stats && (
