@@ -36,7 +36,7 @@ interface Props {
 }
 
 export function JournalDashboard({ investorId, investorName, accentColor }: Props) {
-    const { store, isLoaded, addAccount, deleteAccount, addTrade, deleteTrade, updateTrade } = useJournalStore(investorId);
+    const { store, isLoaded, addAccount, deleteAccount, addTrade, addTrades, deleteTrade, updateTrade } = useJournalStore(investorId);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [showTradeModal, setShowTradeModal] = useState(false);
     const [showPDFModal, setShowPDFModal] = useState(false);
@@ -234,6 +234,7 @@ export function JournalDashboard({ investorId, investorName, accentColor }: Prop
                 <PDFUploadModal
                     accountId={account.id}
                     onImport={addTrade}
+                    onImportMany={addTrades}
                     onClose={() => setShowPDFModal(false)}
                 />
             )}

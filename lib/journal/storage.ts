@@ -72,6 +72,14 @@ export function useJournalStore(investorId: string) {
         [store, save],
     );
 
+    const addTrades = useCallback(
+        (dataList: Omit<Trade, 'id'>[]) => {
+            const newTrades = dataList.map((data) => ({ ...data, id: crypto.randomUUID() }));
+            save({ ...store, trades: [...store.trades, ...newTrades] });
+        },
+        [store, save],
+    );
+
     const deleteTrade = useCallback(
         (tradeId: string) => {
             save({ ...store, trades: store.trades.filter((t) => t.id !== tradeId) });
@@ -97,6 +105,7 @@ export function useJournalStore(investorId: string) {
         addAccount,
         deleteAccount,
         addTrade,
+        addTrades,
         deleteTrade,
         updateTrade,
     };

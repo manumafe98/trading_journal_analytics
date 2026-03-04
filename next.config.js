@@ -11,6 +11,7 @@ const ContentSecurityPolicy = `
   media-src *.s3.amazonaws.com *.shipixen.com;
   connect-src *;
   font-src 'self';
+  worker-src 'self' blob:;
 `;
 
 const securityHeaders = [
@@ -86,6 +87,15 @@ module.exports = () => {
     },
     async headers() {
       return [
+        {
+          // Serve the PDF.js worker with correct MIME type so browsers
+          // accept it as an ES module worker (X-Content-Type-Options: nosniff
+          // would otherwise block it).
+          source: '/pdf.worker.min.mjs',
+          headers: [
+            { key: 'Content-Type', value: 'text/javascript' },
+          ],
+        },
         {
           source: '/(.*)',
           headers: securityHeaders,
