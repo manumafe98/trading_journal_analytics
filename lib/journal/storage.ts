@@ -14,7 +14,47 @@ function readStore(investorId: string): JournalStore {
     try {
         const raw = localStorage.getItem(getKey(investorId));
         if (!raw) return DEFAULT_STORE;
-        return JSON.parse(raw) as JournalStore;
+        const data = JSON.parse(raw) as JournalStore;
+
+        // Data Repair / Migration: Ensure status is consistent with PnL for existing trades
+        let changed = false;
+        const trades = data.trades.map((t) => {
+            let pnl = t.pnl;
+            let pnlPercent = t.pnlPercent;
+
+            // Heuristic: If pnl is small (e.g. 4.3 or 2.3) and pnlPercent is 0, 
+            // it was likely a missing % sign during the first import/entry.
+            if (pnlPercent === 0 && pnl !== 0 && Math.abs(pnl) < 100) {
+                // We'll treat values < 100 as percentages if they look like the user's input (2.3, 4.3, etc)
+                // This is a one-time migration to fix the reported "6 usd" issue.
+                pnlPercent = pnl;
+                pnl = 0;
+                changed = true;
+            }
+
+            const pnlVal = pnlPercent !== 0 && pnlPercent !== undefined ? pnlPercent : pnl;
+            let newStatus = t.status;
+
+            if (t.status !== 'open') {
+                if (Math.abs(pnlVal) <= 0.001) newStatus = 'be';
+                else if (pnlVal > 0) newStatus = 'won';
+                else if (pnlVal < 0) newStatus = 'lost';
+            }
+
+            if (newStatus !== t.status || pnl !== t.pnl || pnlPercent !== t.pnlPercent) {
+                changed = true;
+                return { ...t, pnl, pnlPercent, status: newStatus };
+            }
+            return t;
+        });
+
+        if (changed) {
+            const next = { ...data, trades };
+            localStorage.setItem(getKey(investorId), JSON.stringify(next));
+            return next;
+        }
+
+        return data;
     } catch {
         return DEFAULT_STORE;
     }
@@ -64,6 +104,18 @@ export function useJournalStore(investorId: string) {
         [store, save],
     );
 
+    const updateAccount = useCallback(
+        (accountId: string, data: Partial<Account>) => {
+            save({
+                ...store,
+                accounts: store.accounts.map((a) =>
+                    a.id === accountId ? { ...a, ...data } : a
+                ),
+            });
+        },
+        [store, save],
+    );
+
     const addTrade = useCallback(
         (data: Omit<Trade, 'id'>) => {
             const trade: Trade = { ...data, id: crypto.randomUUID() };
@@ -103,6 +155,7 @@ export function useJournalStore(investorId: string) {
         store,
         isLoaded,
         addAccount,
+        updateAccount,
         deleteAccount,
         addTrade,
         addTrades,
@@ -111,20 +164,36 @@ export function useJournalStore(investorId: string) {
     };
 }
 
+/** If pnl is 0 but pnlPercent exists, convert % → USD using initial capital */
+/** Prioritize percentage if available (for account scaling), fallback to USD value */
+export const getEffectivePnl = (t: Trade, initialCapital: number) => {
+    if (t.pnlPercent !== 0 && t.pnlPercent !== undefined) {
+        return (t.pnlPercent * initialCapital) / 100;
+    }
+    return t.pnl || 0;
+};
+
 /** Derive stats for an account from its trades */
 export function deriveAccountStats(trades: Trade[], initialCapital: number) {
     const closed = trades.filter((t) => t.status !== 'open');
     const won = closed.filter((t) => t.status === 'won');
-    const totalPnl = closed.reduce((s, t) => s + t.pnl, 0);
-    const balance = initialCapital + totalPnl;
-    const winRate = closed.length > 0 ? (won.length / closed.length) * 100 : 0;
-    const avgWin =
-        won.length > 0 ? won.reduce((s, t) => s + t.pnl, 0) / won.length : 0;
     const lost = closed.filter((t) => t.status === 'lost');
-    const avgLoss =
-        lost.length > 0
-            ? Math.abs(lost.reduce((s, t) => s + t.pnl, 0) / lost.length)
-            : 0;
+
+    const totalPnl = closed.reduce((s, t) => s + getEffectivePnl(t, initialCapital), 0);
+    const balance = initialCapital + totalPnl;
+
+    // We exclude BE from the Win Rate denominator by only counting explicit wins/losses.
+    const relevantTotal = won.length + lost.length;
+    const winRate = relevantTotal > 0 ? (won.length / relevantTotal) * 100 : 0;
+
+    const avgWin = won.length > 0
+        ? won.reduce((s, t) => s + getEffectivePnl(t, initialCapital), 0) / won.length
+        : 0;
+
+    const avgLoss = lost.length > 0
+        ? Math.abs(lost.reduce((s, t) => s + getEffectivePnl(t, initialCapital), 0) / lost.length)
+        : 0;
+
     const profitFactor = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0;
 
     return {
@@ -133,6 +202,9 @@ export function deriveAccountStats(trades: Trade[], initialCapital: number) {
         winRate,
         totalTrades: closed.length,
         openTrades: trades.filter((t) => t.status === 'open').length,
+        won: won.length,
+        lost: lost.length,
+        be: closed.length - (won.length + lost.length),
         avgWin,
         avgLoss,
         profitFactor,

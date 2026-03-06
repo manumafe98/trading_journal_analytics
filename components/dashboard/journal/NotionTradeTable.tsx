@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { PlusIcon, Trash2Icon } from 'lucide-react';
+import { PlusIcon, Trash2Icon, ImageIcon, BookOpen } from 'lucide-react';
 import type { Trade, TradeResult } from '@/lib/journal/types';
+import { TradeImagesModal } from './TradeImagesModal';
+import { TradeNotesModal } from './TradeNotesModal';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Column Definitions
@@ -37,7 +39,7 @@ const COLUMNS: ColDef[] = [
     { key: 'durationText', label: 'Duración', type: 'text', width: 80, placeholder: '2h30m' },
     { key: 'targetMax', label: 'Target Max', type: 'text', width: 110, placeholder: '2° objetivo…' },
     { key: 'targetMaxFinal', label: 'Target Max Final', type: 'select', width: 108, options: ['—', 'Sí', 'No'] },
-    { key: 'pnl', label: 'PnL', type: 'number', width: 88, placeholder: '0' },
+    { key: 'pnl', label: 'PnL', type: 'text', width: 88, placeholder: '0 o 4.3%' },
     { key: 'proud', label: 'Orgulloso', type: 'select', width: 88, options: ['—', 'Sí', 'No'] },
     { key: 'wouldReenter', label: '¿Volvería a entrar?', type: 'select', width: 100, options: ['—', 'Sí', 'No'] },
     { key: 'howContinued', label: '¿Cómo siguió…?', type: 'select', width: 110, options: ['—', 'A favor', 'En contra'] },
@@ -66,11 +68,16 @@ function getCellRawValue(trade: Trade, key: string): string {
     return String(v);
 }
 
-function derivedStatus(result: string, pnl: number): Trade['status'] {
+function derivedStatus(result: string, pnl: number, pnlPercent?: number): Trade['status'] {
     if (result === 'TP') return 'won';
-    if (result === 'SL' || result === 'BE') return 'lost';
-    if (pnl > 0) return 'won';
-    if (pnl < 0) return 'lost';
+    if (result === 'SL') return 'lost';
+    if (result === 'BE') return 'be';
+
+    // Fallback to numeric logic if result is missing
+    const val = (pnlPercent !== 0 && pnlPercent !== undefined) ? pnlPercent : pnl;
+    if (Math.abs(val) <= 0.001) return 'be';
+    if (val > 0) return 'won';
+    if (val < 0) return 'lost';
     return 'open';
 }
 
@@ -156,15 +163,28 @@ function CellDisplay({ trade, col }: { trade: Trade; col: ColDef }) {
         );
     }
 
-    // PnL — colored number
+    // PnL — colored number formats (handles flat currency or percentage)
     if (col.key === 'pnl') {
-        const num = parseFloat(raw);
-        if (isNaN(num) || num === 0) return <span className="text-gray-300 dark:text-gray-600">—</span>;
-        return (
-            <span className={`font-semibold text-xs ${num > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {num > 0 ? '+' : ''}{num.toFixed(2)}
-            </span>
-        );
+        const hasPercent = trade.pnlPercent !== 0 && trade.pnlPercent !== undefined;
+        const hasPnl = trade.pnl !== 0 && trade.pnl !== undefined;
+
+        if (hasPercent) {
+            const p = trade.pnlPercent!;
+            return (
+                <span className={`font-semibold text-xs ${p > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {p > 0 ? '+' : ''}{p.toFixed(2)}%
+                </span>
+            );
+        } else if (hasPnl) {
+            const n = trade.pnl;
+            return (
+                <span className={`font-semibold text-xs ${n > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {n > 0 ? '+' : ''}${n.toFixed(2)}
+                </span>
+            );
+        } else {
+            return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        }
     }
 
     // RR — violet mono
@@ -292,11 +312,13 @@ function buildUpdate(col: ColDef, rawValue: string, trade: Trade): Partial<Trade
         };
     }
     if (col.key === 'pnl') {
-        const pnlNum = typeof parsed === 'number' ? parsed : 0;
+        const isPercent = rawValue.includes('%');
+        const num = parseFloat(rawValue.replace(/[^\d.\-]/g, '')) || 0;
+
         return {
-            pnl: pnlNum,
-            pnlPercent: trade.riskUsd ? (pnlNum / trade.riskUsd) * 100 : 0,
-            status: derivedStatus(trade.result ?? '', pnlNum),
+            pnl: isPercent ? 0 : num,
+            pnlPercent: isPercent ? num : 0,
+            status: derivedStatus(trade.result ?? '', isPercent ? 0 : num, isPercent ? num : 0),
         };
     }
     if (col.key === 'side') {
@@ -311,6 +333,10 @@ export function NotionTradeTable({ trades, accountId, onAdd, onUpdate, onDelete 
     // Ref mirrors editValue so commitEdit always reads the latest — avoids stale closure
     const editValueRef = useRef('');
     const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+
+    // Modal states
+    const [imagesModalTradeId, setImagesModalTradeId] = useState<string | null>(null);
+    const [notesModalTradeId, setNotesModalTradeId] = useState<string | null>(null);
 
     const setCurrentValue = useCallback((v: string) => {
         editValueRef.current = v;
@@ -377,151 +403,218 @@ export function NotionTradeTable({ trades, accountId, onAdd, onUpdate, onDelete 
             pnlPercent: 0,
             status: 'open',
             source: 'manual',
+            images: [],
+            journalNotes: '',
         });
     }, [accountId, onAdd]);
 
-    const totalWidth = COLUMNS.reduce((s, c) => s + c.width, 0) + 40 + 36; // row# + delete
+    const totalWidth = COLUMNS.reduce((s, c) => s + c.width, 0) + 40 + 90; // row# + delete + images + notes
+
+    // Active trade for modal
+    const tradeForImages = imagesModalTradeId
+        ? trades.find(t => t.id === imagesModalTradeId)
+        : null;
+
+    const tradeForNotes = notesModalTradeId
+        ? trades.find(t => t.id === notesModalTradeId)
+        : null;
 
     return (
-        <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-md dark:border dark:border-gray-700/50 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-5 py-3">
-                <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-50 text-sm">Journal de Trades</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Hacé click en cualquier celda para editar</p>
+        <>
+            <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-md dark:border dark:border-gray-700/50 overflow-hidden relative">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-5 py-3">
+                    <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-50 text-sm">Registro Central de Backtesting</h3>
+                        <p className="text-xs text-gray-400 mt-0.5">Editá las variables de éxito y adjuntá imágenes de cada trade</p>
+                    </div>
+                    <button
+                        onClick={handleAddRow}
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <PlusIcon className="h-3.5 w-3.5" />
+                        Nueva fila
+                    </button>
                 </div>
-                <button
-                    onClick={handleAddRow}
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                    <PlusIcon className="h-3.5 w-3.5" />
-                    Nueva fila
-                </button>
-            </div>
 
-            {/* Scrollable table */}
-            <div className="overflow-x-auto" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                <table style={{ minWidth: totalWidth, borderCollapse: 'collapse' }} className="w-full">
-                    {/* Sticky header */}
-                    <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-850">
-                        <tr className="bg-gray-50 dark:bg-gray-900/80">
-                            {/* Row number */}
-                            <th style={{ width: 40 }} className="text-left pl-4 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 border-b border-r border-gray-100 dark:border-gray-700">
-                                #
-                            </th>
-                            {COLUMNS.map((col) => (
-                                <th
-                                    key={col.key}
-                                    style={{ width: col.width, minWidth: col.width }}
-                                    className="text-left px-2 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b border-r border-gray-100 dark:border-gray-700 whitespace-nowrap"
-                                >
-                                    {col.label}
+                {/* Scrollable table */}
+                <div className="overflow-x-auto" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                    <table style={{ minWidth: totalWidth, borderCollapse: 'collapse' }} className="w-full relative">
+                        {/* Sticky header */}
+                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-850">
+                            <tr className="bg-gray-50 dark:bg-gray-900/80">
+                                {/* Row number */}
+                                <th style={{ width: 40 }} className="text-left pl-4 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 border-b border-r border-gray-100 dark:border-gray-700">
+                                    #
                                 </th>
-                            ))}
-                            {/* Delete */}
-                            <th style={{ width: 36 }} className="border-b border-gray-100 dark:border-gray-700" />
-                        </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                        {sorted.length === 0 && (
-                            <tr>
-                                <td
-                                    colSpan={COLUMNS.length + 2}
-                                    className="py-14 text-center text-xs text-gray-400"
-                                >
-                                    No hay trades. Hacé click en "Nueva fila" o subí un PDF para empezar.
-                                </td>
+                                {COLUMNS.map((col) => (
+                                    <th
+                                        key={col.key}
+                                        style={{ width: col.width, minWidth: col.width }}
+                                        className="text-left px-2 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b border-r border-gray-100 dark:border-gray-700 whitespace-nowrap"
+                                    >
+                                        {col.label}
+                                    </th>
+                                ))}
+                                {/* Actions (Images + Delete) */}
+                                <th style={{ width: 90 }} className="text-center px-1 py-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b border-gray-100 dark:border-gray-700">
+                                    Extras
+                                </th>
                             </tr>
-                        )}
+                        </thead>
 
-                        {sorted.map((trade, idx) => {
-                            const isHovered = hoveredRow === trade.id;
-                            return (
-                                <tr
-                                    key={trade.id}
-                                    onMouseEnter={() => setHoveredRow(trade.id)}
-                                    onMouseLeave={() => setHoveredRow(null)}
-                                    className={`transition-colors duration-75 ${isHovered ? 'bg-gray-50 dark:bg-gray-700/30' : 'bg-white dark:bg-gray-800'}`}
-                                >
-                                    {/* Row number */}
-                                    <td className="pl-4 pr-2 py-1.5 text-xs text-gray-300 dark:text-gray-600 border-r border-gray-100 dark:border-gray-700 select-none">
-                                        {sorted.length - idx}
-                                        {trade.source === 'pdf' && (
-                                            <span className="ml-1 text-[9px] text-primary-400 font-bold">PDF</span>
-                                        )}
-                                    </td>
-
-                                    {COLUMNS.map((col) => {
-                                        const isEditing = editing?.tradeId === trade.id && editing.col === col.key;
-                                        const isCalc = col.type === 'calc';
-
-                                        return (
-                                            <td
-                                                key={col.key}
-                                                style={{ width: col.width, minWidth: col.width }}
-                                                onClick={() => {
-                                                    if (!isCalc) startEdit(trade.id, col);
-                                                }}
-                                                className={`px-2 py-1.5 border-r border-gray-100 dark:border-gray-700 ${isCalc ? 'bg-gray-50/50 dark:bg-gray-700/20 cursor-default' : 'cursor-pointer'
-                                                    } ${isEditing
-                                                        ? 'ring-2 ring-inset ring-primary-400 bg-primary-50/30 dark:bg-primary-900/20'
-                                                        : ''
-                                                    } overflow-hidden`}
-                                            >
-                                                {isEditing ? (
-                                                    <CellEditor
-                                                        col={col}
-                                                        value={editValue}
-                                                        onChange={setCurrentValue}
-                                                        onCommit={commitEdit}
-                                                        onCommitWithValue={commitWithValue}
-                                                        onCancel={cancelEdit}
-                                                    />
-                                                ) : (
-                                                    <CellDisplay trade={trade} col={col} />
-                                                )}
-                                            </td>
-                                        );
-                                    })}
-
-                                    {/* Delete */}
-                                    <td className="px-2 py-1.5 text-center">
-                                        <button
-                                            onClick={() => onDelete(trade.id)}
-                                            className={`cursor-pointer rounded p-1 text-gray-300 transition-all hover:bg-red-50 hover:text-red-400 dark:hover:bg-red-900/20 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-                                            aria-label="Eliminar fila"
-                                        >
-                                            <Trash2Icon className="h-3.5 w-3.5" />
-                                        </button>
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                            {sorted.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={COLUMNS.length + 2}
+                                        className="py-14 text-center text-xs text-gray-400"
+                                    >
+                                        No hay trades. Hacé click en "Nueva fila" o subí un CSV para empezar.
                                     </td>
                                 </tr>
-                            );
-                        })}
+                            )}
 
-                        {/* Add row */}
-                        <tr
-                            onClick={handleAddRow}
-                            className="cursor-pointer group border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                        >
-                            <td className="pl-4 pr-2 py-2.5 border-r border-gray-100 dark:border-gray-700">
-                                <PlusIcon className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 group-hover:text-primary-400 transition-colors" />
-                            </td>
-                            <td colSpan={COLUMNS.length + 1} className="px-2 py-2.5 text-xs text-gray-300 dark:text-gray-600 group-hover:text-primary-400 transition-colors">
-                                Nueva fila
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            {sorted.map((trade, idx) => {
+                                const isHovered = hoveredRow === trade.id;
+                                const imgCount = trade.images?.length || 0;
+                                const hasNotes = !!trade.journalNotes && trade.journalNotes.trim().length > 0;
+
+                                return (
+                                    <tr
+                                        key={trade.id}
+                                        onMouseEnter={() => setHoveredRow(trade.id)}
+                                        onMouseLeave={() => setHoveredRow(null)}
+                                        className={`transition-colors duration-75 ${isHovered ? 'bg-gray-50 dark:bg-gray-700/30' : 'bg-white dark:bg-gray-800'}`}
+                                    >
+                                        {/* Row number */}
+                                        <td className="pl-4 pr-2 py-1.5 text-xs text-gray-300 dark:text-gray-600 border-r border-gray-100 dark:border-gray-700 select-none">
+                                            {sorted.length - idx}
+                                            {trade.source === 'pdf' && (
+                                                <span className="ml-1 text-[9px] text-primary-400 font-bold">CSV</span>
+                                            )}
+                                        </td>
+
+                                        {COLUMNS.map((col) => {
+                                            const isEditing = editing?.tradeId === trade.id && editing.col === col.key;
+                                            const isCalc = col.type === 'calc';
+
+                                            return (
+                                                <td
+                                                    key={col.key}
+                                                    style={{ width: col.width, minWidth: col.width }}
+                                                    onClick={() => {
+                                                        if (!isCalc) startEdit(trade.id, col);
+                                                    }}
+                                                    className={`px-2 py-1.5 border-r border-gray-100 dark:border-gray-700 ${isCalc ? 'bg-gray-50/50 dark:bg-gray-700/20 cursor-default' : 'cursor-pointer'
+                                                        } ${isEditing
+                                                            ? 'ring-2 ring-inset ring-primary-400 bg-primary-50/30 dark:bg-primary-900/20'
+                                                            : ''
+                                                        } overflow-hidden`}
+                                                >
+                                                    {isEditing ? (
+                                                        <CellEditor
+                                                            col={col}
+                                                            value={editValue}
+                                                            onChange={setCurrentValue}
+                                                            onCommit={commitEdit}
+                                                            onCommitWithValue={commitWithValue}
+                                                            onCancel={cancelEdit}
+                                                        />
+                                                    ) : (
+                                                        <CellDisplay trade={trade} col={col} />
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+
+                                        {/* Actions (Images + Delete + Notes) */}
+                                        <td className="px-2 py-1.5 border-l border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-850/30">
+                                            <div className={`flex items-center justify-center gap-1.5 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0 md:opacity-100'}`}>
+                                                <button
+                                                    onClick={() => setImagesModalTradeId(trade.id)}
+                                                    className={`relative cursor-pointer rounded p-1 transition-all ${imgCount > 0
+                                                        ? 'text-primary-500 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/20'
+                                                        : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-400'
+                                                        }`}
+                                                    aria-label="Ver imágenes"
+                                                >
+                                                    <ImageIcon className="h-3.5 w-3.5" />
+                                                    {imgCount > 0 && (
+                                                        <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary-500 text-[8px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-gray-800">
+                                                            {imgCount}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => setNotesModalTradeId(trade.id)}
+                                                    className={`relative cursor-pointer rounded p-1 transition-all ${hasNotes
+                                                        ? 'text-violet-500 hover:bg-violet-50 hover:text-violet-600 dark:hover:bg-violet-900/20'
+                                                        : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-400'
+                                                        }`}
+                                                    aria-label="Notas del Trade"
+                                                >
+                                                    <BookOpen className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => onDelete(trade.id)}
+                                                    className="cursor-pointer rounded p-1 text-gray-300 transition-all hover:bg-red-50 hover:text-red-400 dark:text-gray-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                                    aria-label="Eliminar fila"
+                                                >
+                                                    <Trash2Icon className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+
+                            {/* Add row */}
+                            <tr
+                                onClick={handleAddRow}
+                                className="cursor-pointer group border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                            >
+                                <td className="pl-4 pr-2 py-2.5 border-r border-gray-100 dark:border-gray-700">
+                                    <PlusIcon className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 group-hover:text-primary-400 transition-colors" />
+                                </td>
+                                <td colSpan={COLUMNS.length + 1} className="px-2 py-2.5 text-xs text-gray-300 dark:text-gray-600 group-hover:text-primary-400 transition-colors">
+                                    Nueva fila
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Footer count */}
+                {trades.length > 0 && (
+                    <div className="border-t border-gray-100 dark:border-gray-700 px-5 py-2 text-xs text-gray-400 flex items-center justify-between">
+                        <span>{trades.length} trade{trades.length !== 1 ? 's' : ''}</span>
+                        <span className="text-gray-300 dark:text-gray-600">Click en la imagen al final de cada fila para guardar capturas</span>
+                    </div>
+                )}
+
+                {/* Modal injection */}
             </div>
 
-            {/* Footer count */}
-            {trades.length > 0 && (
-                <div className="border-t border-gray-100 dark:border-gray-700 px-5 py-2 text-xs text-gray-400 flex items-center justify-between">
-                    <span>{trades.length} trade{trades.length !== 1 ? 's' : ''}</span>
-                    <span className="text-gray-300 dark:text-gray-600">Tab / Enter para navegar · Escape para cancelar</span>
-                </div>
+            {tradeForImages && (
+                <TradeImagesModal
+                    trade={tradeForImages}
+                    onClose={() => setImagesModalTradeId(null)}
+                    onSave={(images) => {
+                        onUpdate(tradeForImages.id, { images });
+                    }}
+                />
             )}
-        </div>
+
+            {tradeForNotes && (
+                <TradeNotesModal
+                    trade={tradeForNotes}
+                    onClose={() => setNotesModalTradeId(null)}
+                    onSave={(journalNotes) => {
+                        onUpdate(tradeForNotes.id, { journalNotes });
+                    }}
+                />
+            )}
+        </>
     );
 }

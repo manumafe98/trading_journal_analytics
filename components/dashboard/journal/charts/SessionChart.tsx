@@ -3,101 +3,118 @@
 import { useMemo } from 'react';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
-    CartesianGrid, Tooltip, Cell, ReferenceLine,
+    CartesianGrid, Tooltip, ReferenceArea, ReferenceLine
 } from 'recharts';
 import type { Trade } from '@/lib/journal/types';
 
 interface Props { trades: Trade[]; }
 
-// Assign hour to a time-of-day bucket for color coding
-function hourToColor(h: number): string {
-    if (h >= 2 && h < 9) return '#f59e0b'; // Asia / pre-market
-    if (h >= 9 && h < 13) return '#3b82f6'; // London / NY open
-    if (h >= 13 && h < 17) return '#22c55e'; // NY session
-    return '#8b5cf6'; // after hours / overnight
-}
-
 export function SessionChart({ trades }: Props) {
     const data = useMemo(() => {
-        // Group closed trades by entry hour
-        const closed = trades.filter((t) => t.status !== 'open' && t.entryTime);
-        const byHour: Record<number, { pnl: number; won: number; total: number }> = {};
-
-        for (const t of closed) {
-            const hour = parseInt((t.entryTime ?? '00:00').split(':')[0], 10);
-            if (!byHour[hour]) byHour[hour] = { pnl: 0, won: 0, total: 0 };
-            byHour[hour].pnl += t.pnl;
-            byHour[hour].total += 1;
-            if (t.status === 'won') byHour[hour].won += 1;
+        // Group by hour
+        const hourly: Record<number, { hour: number, total: number, won: number, lost: number, be: number }> = {};
+        for (let i = 0; i < 24; i++) {
+            hourly[i] = { hour: i, total: 0, won: 0, lost: 0, be: 0 };
         }
 
-        return Object.entries(byHour)
-            .map(([h, v]) => ({
-                hour: parseInt(h, 10),
-                label: `${h.padStart(2, '0')}:00`,
-                pnl: parseFloat(v.pnl.toFixed(2)),
-                winRate: v.total > 0 ? Math.round((v.won / v.total) * 100) : 0,
-                count: v.total,
-                color: hourToColor(parseInt(h, 10)),
-            }))
-            .sort((a, b) => a.hour - b.hour);
+        trades.forEach(t => {
+            if (!t.entryTime) return;
+            const hour = parseInt(t.entryTime.split(':')[0]);
+            if (!isNaN(hour) && hourly[hour]) {
+                hourly[hour].total++;
+                if (t.status === 'won') hourly[hour].won++;
+                else if (t.status === 'lost') hourly[hour].lost++;
+                else if (t.status === 'be') hourly[hour].be++;
+            }
+        });
+
+        return Object.values(hourly).map(h => ({
+            ...h,
+            timeLabel: `${h.hour}:00`,
+            winRate: h.total > 0 ? (h.won / (h.won + h.lost || 1)) * 100 : 0
+        }));
     }, [trades]);
 
-    const hasData = data.length > 0;
-
     return (
-        <div className="rounded-2xl bg-white dark:bg-gray-800 p-5 shadow-md dark:border dark:border-gray-700/50">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-50 mb-0.5">Rendimiento por Hora</h3>
-            <p className="text-xs text-gray-400 mb-4">P&L acumulado — por hora de entrada del trade</p>
+        <div className="overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm transition-all duration-300 hover:shadow-xl">
+            <div className="border-b border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20 px-6 py-4">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-50 tracking-tight">Actividad por Horario</h3>
+                <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
+                    Distribución de trades por hora (Basado en la hora ingresada)
+                </p>
+            </div>
 
-            {!hasData ? (
-                <div className="flex h-44 flex-col items-center justify-center text-xs text-gray-400 gap-1">
-                    <span>Sin datos de hora disponibles</span>
-                    <span className="opacity-60">Completá la columna &ldquo;Hora Ejecución&rdquo; en la tabla</span>
+            <div className="p-6">
+                <div className="h-64 w-full mb-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }} barGap={0}>
+                            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-gray-800" opacity={0.4} />
+
+                            {/* Visual Session Highlights (Approximate UTC) */}
+                            <ReferenceArea x1={3} x2={11} fill="#0ea5e9" fillOpacity={0.03} label={{ position: 'top', value: 'LDN', fontSize: 10, fill: '#0ea5e9', fontWeight: 'bold' }} />
+                            <ReferenceArea x1={8} x2={16} fill="#f59e0b" fillOpacity={0.03} label={{ position: 'top', value: 'NY', fontSize: 10, fill: '#f59e0b', fontWeight: 'bold' }} />
+
+                            <XAxis
+                                dataKey="hour"
+                                axisLine={false}
+                                tickLine={false}
+                                className="text-[10px] font-bold text-gray-400"
+                                tickFormatter={(v) => `${v}h`}
+                                interval={2}
+                            />
+                            <YAxis axisLine={false} tickLine={false} className="text-[10px] font-bold text-gray-400" />
+
+                            <Tooltip
+                                cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }}
+                                content={({ active, payload, label }) => {
+                                    if (active && payload && payload.length) {
+                                        const d = payload[0].payload;
+                                        return (
+                                            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 p-3 shadow-2xl backdrop-blur-md">
+                                                <p className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">{label}:00 HS</p>
+                                                <div className="space-y-1.5 text-xs">
+                                                    <div className="flex justify-between gap-4">
+                                                        <span className="text-gray-400 font-medium">Ganados:</span>
+                                                        <span className="font-bold text-emerald-500">{d.won}</span>
+                                                    </div>
+                                                    <div className="flex justify-between gap-4">
+                                                        <span className="text-gray-400 font-medium">Perdidos:</span>
+                                                        <span className="font-bold text-red-500">{d.lost}</span>
+                                                    </div>
+                                                    <div className="flex justify-between gap-4 border-t border-gray-100 dark:border-gray-700 pt-1">
+                                                        <span className="text-gray-400 font-medium">Win Rate:</span>
+                                                        <span className="font-bold text-indigo-500">{d.winRate.toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                }}
+                            />
+
+                            <Bar dataKey="won" stackId="hour" fill="#10b981" radius={[0, 0, 0, 0]} barSize={20} />
+                            <Bar dataKey="be" stackId="hour" fill="#94a3b8" radius={[0, 0, 0, 0]} barSize={20} />
+                            <Bar dataKey="lost" stackId="hour" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
-            ) : (
-                <>
-                    <div className="h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-gray-100 dark:stroke-gray-700" />
-                                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} className="fill-gray-400" />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} className="fill-gray-400" width={50}
-                                    tickFormatter={(v) => `${v >= 0 ? '+' : ''}$${Math.abs(v).toFixed(0)}`} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '0.75rem', border: '1px solid rgba(0,0,0,0.06)', fontSize: '0.75rem' }}
-                                    formatter={(v: number, _: string, p) => [
-                                        `${v >= 0 ? '+' : ''}$${v.toFixed(2)} · ${(p.payload as { winRate: number; count: number }).winRate}% WR · ${(p.payload as { winRate: number; count: number }).count} trades`,
-                                        'P&L',
-                                    ]}
-                                    labelFormatter={(l) => `Hora ${l}`}
-                                />
-                                <ReferenceLine y={0} stroke="#94a3b8" strokeWidth={1} />
-                                <Bar dataKey="pnl" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                                    {data.map((d, i) => (
-                                        <Cell key={i} fill={d.pnl >= 0 ? d.color : '#ef4444'} opacity={0.85} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
 
-                    {/* Session legend */}
-                    <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
-                        {[
-                            { label: 'Asia (02-08)', color: '#f59e0b' },
-                            { label: 'Londres / Apertura (09-12)', color: '#3b82f6' },
-                            { label: 'Nueva York (13-16)', color: '#22c55e' },
-                            { label: 'Fuera de sesión', color: '#8b5cf6' },
-                        ].map(({ label, color }) => (
-                            <div key={label} className="flex items-center gap-1.5">
-                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                                {label}
-                            </div>
-                        ))}
+                <div className="flex justify-center gap-6">
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-[10px] font-bold uppercase text-gray-400">Won</span>
                     </div>
-                </>
-            )}
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+                        <span className="text-[10px] font-bold uppercase text-gray-400">BE</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                        <span className="text-[10px] font-bold uppercase text-gray-400">Lost</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

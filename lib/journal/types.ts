@@ -4,10 +4,11 @@ export interface Account {
     initialCapital: number;
     currency: string;
     createdAt: string;
+    psychologicalProfile?: string;
 }
 
 export type TradeSide = 'Buy' | 'Sell';
-export type TradeStatus = 'won' | 'lost' | 'open';
+export type TradeStatus = 'won' | 'lost' | 'be' | 'open';
 export type AssetClass = 'Stock' | 'Crypto' | 'Forex' | 'Futures' | 'Options' | 'Other';
 export type TradeResult = 'TP' | 'SL' | 'BE';
 export type TradeStyle = 'DAY' | 'SWING' | 'SCALP';
@@ -44,6 +45,8 @@ export interface Trade {
     errorNotes?: string;      // Errores/Revisión
     executionNotes?: string;  // ¿Ejecución?
     source?: 'manual' | 'pdf';
+    images?: string[];        // Array of base64 webp compressed images
+    journalNotes?: string;    // Diario íntimo del trade para la IA
 
     // ── Notion Table columns ──
     executable?: string;           // Ejecutable — 'Sí' | 'No'

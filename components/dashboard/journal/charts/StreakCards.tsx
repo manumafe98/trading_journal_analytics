@@ -24,10 +24,14 @@ function computeStreaks(trades: Trade[]): StreakResult {
             curWin++;
             curLoss = 0;
             maxWin = Math.max(maxWin, curWin);
-        } else {
+        } else if (t.status === 'lost') {
             curLoss++;
             curWin = 0;
             maxLoss = Math.max(maxLoss, curLoss);
+        } else {
+            // BE or other: reset current streaks but don't count as a loss
+            curWin = 0;
+            curLoss = 0;
         }
     }
     return { currentWin: curWin, maxWin, currentLoss: curLoss, maxLoss };
@@ -51,13 +55,9 @@ export function StreakCards({ trades }: Props) {
                 {label}
             </div>
             <div className="flex items-end gap-4">
-                <div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-50">{current}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Actual</p>
-                </div>
-                <div className="pb-1 border-l border-gray-200 dark:border-gray-600 pl-4">
-                    <p className="text-xl font-bold text-gray-600 dark:text-gray-400">{max}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Máximo histórico</p>
+                <div className="pb-1">
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-50">{max}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Racha máxima</p>
                 </div>
             </div>
         </div>

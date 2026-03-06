@@ -6,20 +6,23 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import type { Trade } from '@/lib/journal/types';
+import { getEffectivePnl } from '@/lib/journal/storage';
 
-interface Props { trades: Trade[]; }
+interface Props { trades: Trade[]; initialCapital: number; }
 
-export function MonthlyProgressChart({ trades }: Props) {
+export function MonthlyProgressChart({ trades, initialCapital }: Props) {
     const data = useMemo(() => {
         const closed = trades.filter((t) => t.status !== 'open');
         const byMonth: Record<string, { pnl: number; won: number; total: number }> = {};
 
         for (const t of closed) {
-            const d = new Date(t.entryDate);
+            const d = new Date(t.exitDate || t.entryDate);
             if (isNaN(d.getTime())) continue;
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             if (!byMonth[key]) byMonth[key] = { pnl: 0, won: 0, total: 0 };
-            byMonth[key].pnl += t.pnl;
+
+            const pnl = getEffectivePnl(t, initialCapital);
+            byMonth[key].pnl += pnl;
             byMonth[key].total += 1;
             if (t.status === 'won') byMonth[key].won += 1;
         }
@@ -38,7 +41,7 @@ export function MonthlyProgressChart({ trades }: Props) {
                     trades: v.total,
                 };
             });
-    }, [trades]);
+    }, [trades, initialCapital]);
 
     const hasData = data.length >= 1;
 

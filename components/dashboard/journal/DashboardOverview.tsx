@@ -11,7 +11,7 @@ import { MonthlyPLChart } from './charts/MonthlyPLChart';
 import { StreakCards } from './charts/StreakCards';
 import { MonthlyProgressChart } from './charts/MonthlyProgressChart';
 import type { Trade, Account } from '@/lib/journal/types';
-import { deriveAccountStats } from '@/lib/journal/storage';
+import { deriveAccountStats, getEffectivePnl } from '@/lib/journal/storage';
 
 interface Props {
     account: Account;
@@ -60,7 +60,7 @@ function KpiCard({
 }
 
 // ── Recent trades mini-table ───────────────────────────────────────────────────
-function RecentTradesTable({ trades }: { trades: Trade[] }) {
+function RecentTradesTable({ trades, initialCapital }: { trades: Trade[], initialCapital: number }) {
     const recent = [...trades]
         .sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime())
         .slice(0, 8);
@@ -88,7 +88,8 @@ function RecentTradesTable({ trades }: { trades: Trade[] }) {
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
                     {recent.map((t) => {
                         const isLong = t.side === 'Buy';
-                        const pnlPos = t.pnl >= 0;
+                        const effectivePnl = getEffectivePnl(t, initialCapital);
+                        const pnlPos = effectivePnl >= 0;
                         const resultColor = t.result === 'TP' ? 'text-green-600 bg-green-50 dark:bg-green-900/20'
                             : t.result === 'SL' ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
                                 : t.result === 'BE' ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20'
@@ -115,7 +116,7 @@ function RecentTradesTable({ trades }: { trades: Trade[] }) {
                                     )}
                                 </td>
                                 <td className={`py-2.5 px-3 font-bold tabular-nums ${pnlPos ? 'text-green-600' : 'text-red-500'}`}>
-                                    {pnlPos ? '+' : ''}{t.pnl.toFixed(2)}
+                                    {pnlPos ? '+' : ''}{effectivePnl.toFixed(2)}
                                 </td>
                             </tr>
                         );
@@ -138,11 +139,12 @@ export function DashboardOverview({ account, trades }: Props) {
     const bestSymbol = useMemo(() => {
         const bySymbol: Record<string, number> = {};
         closedTrades.forEach((t) => {
-            bySymbol[t.symbol] = (bySymbol[t.symbol] ?? 0) + t.pnl;
+            const pnl = getEffectivePnl(t, account.initialCapital);
+            bySymbol[t.symbol] = (bySymbol[t.symbol] ?? 0) + pnl;
         });
         const sorted = Object.entries(bySymbol).sort(([, a], [, b]) => b - a);
         return sorted[0] ? { symbol: sorted[0][0], pnl: sorted[0][1] } : null;
-    }, [closedTrades]);
+    }, [closedTrades, account.initialCapital]);
 
     return (
         <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-6 lg:px-8 space-y-6">
@@ -168,7 +170,7 @@ export function DashboardOverview({ account, trades }: Props) {
                 <KpiCard
                     label="Win Rate"
                     value={`${stats.winRate.toFixed(1)}%`}
-                    sub={`${closedTrades.filter((t) => t.status === 'won').length} / ${closedTrades.length} trades cerrados`}
+                    sub={`${stats.won} ganados / ${stats.won + stats.lost} trades decisivos`}
                     icon={TargetIcon}
                     color={stats.winRate >= 50 ? 'green' : 'amber'}
                 />
@@ -222,18 +224,16 @@ export function DashboardOverview({ account, trades }: Props) {
                 </div>
             )}
 
-            {/* ── Equity curve ── */}
-            <EquityCurveChart trades={trades} initialCapital={account.initialCapital} />
-
-            {/* ── 3-col: WinLoss + MonthlyPL + Streaks ── */}
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {/* Dashboard grid */}
+            <div className="grid gap-6 lg:grid-cols-2">
+                <EquityCurveChart trades={trades} initialCapital={account.initialCapital} />
                 <WinLossDonut trades={trades} />
-                <MonthlyPLChart trades={trades} />
+                <MonthlyPLChart trades={trades} initialCapital={account.initialCapital} />
                 <StreakCards trades={trades} />
             </div>
 
             {/* ── Progreso mensual ── */}
-            <MonthlyProgressChart trades={trades} />
+            <MonthlyProgressChart trades={trades} initialCapital={account.initialCapital} />
 
             {/* ── Recent trades ── */}
             <div className="rounded-2xl bg-white dark:bg-gray-800 p-5 shadow-sm dark:border dark:border-gray-700/50">
@@ -246,7 +246,7 @@ export function DashboardOverview({ account, trades }: Props) {
                         {trades.length} total
                     </span>
                 </div>
-                <RecentTradesTable trades={trades} />
+                <RecentTradesTable trades={trades} initialCapital={account.initialCapital} />
             </div>
         </div>
     );

@@ -6,19 +6,20 @@ import {
     CartesianGrid, Tooltip, Cell, ReferenceLine,
 } from 'recharts';
 import type { Trade } from '@/lib/journal/types';
+import { getEffectivePnl } from '@/lib/journal/storage';
 
-interface Props { trades: Trade[]; }
+interface Props { trades: Trade[]; initialCapital: number; }
 
 const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-export function MonthlyPLChart({ trades }: Props) {
+export function MonthlyPLChart({ trades, initialCapital }: Props) {
     const data = useMemo(() => {
         const byMonth: Record<string, number> = {};
         for (const t of trades) {
             if (t.status === 'open' || !t.exitDate) continue;
             const d = new Date(t.exitDate);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            byMonth[key] = (byMonth[key] ?? 0) + t.pnl;
+            byMonth[key] = (byMonth[key] ?? 0) + getEffectivePnl(t, initialCapital);
         }
         return Object.entries(byMonth)
             .sort(([a], [b]) => a.localeCompare(b))

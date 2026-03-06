@@ -1,13 +1,34 @@
 import { Nunito_Sans } from 'next/font/google';
-import { siteConfig } from '@/data/config/site.settings';
 import { ThemeProviders } from './theme-providers';
 import { Metadata } from 'next';
-
-import { colors } from '@/data/config/colors.js';
 
 import '@/css/globals.css';
 import { SearchProvider } from '@/components/shared/SearchProvider';
 import { AnalyticsWrapper } from '@/components/shared/Analytics';
+
+const siteConfig = {
+  title: 'Mevolut',
+  description: 'Trading Journal Analytics',
+  siteUrl: 'https://mevolut.com',
+  socialBanner: '/static/images/twitter-card.png',
+  language: 'es-AR',
+};
+
+const colors = {
+  primary: {
+    50: '#f0f9ff',
+    100: '#e0f2fe',
+    200: '#bae6fd',
+    300: '#7dd3fc',
+    400: '#38bdf8',
+    500: '#0ea5e9',
+    600: '#0284c7',
+    700: '#0369a1',
+    800: '#075985',
+    900: '#0c4a6e',
+    950: '#082f49',
+  },
+};
 
 const displayFont = Nunito_Sans({
   subsets: ['latin'],
@@ -24,8 +45,8 @@ const baseFont = Nunito_Sans({
 const globalColors = colors;
 const style: string[] = [];
 
-Object.keys(globalColors).map((variant) => {
-  return Object.keys(globalColors[variant]).map((color) => {
+Object.keys(globalColors).forEach((variant) => {
+  Object.keys(globalColors[variant]).forEach((color) => {
     const value = globalColors[variant][color];
     style.push(`--${variant}-${color}: ${value}`);
   });
@@ -44,25 +65,12 @@ export const metadata: Metadata = {
     url: './',
     siteName: siteConfig.title,
     images: [siteConfig.socialBanner],
-    locale: 'en_US',
+    locale: 'es_AR',
     type: 'website',
-  },
-  alternates: {
-    canonical: './',
-    types: {
-      'application/rss+xml': `${siteConfig.siteUrl}/feed.xml`,
-    },
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
   },
   twitter: {
     title: siteConfig.title,

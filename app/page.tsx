@@ -11,7 +11,7 @@ const investors = [
     name: 'Ignacio Torre',
     initials: 'IT',
     role: 'Inversor',
-    avatar: '/static/images/people/1.webp',
+    avatar: '/static/images/people/ignacio-nuevo.png',
     href: '/dashboard/ignacio',
     accent: 'from-sky-950 via-slate-900 to-slate-950',
     glowColor: 'rgba(14, 165, 233, 0.15)',
@@ -39,6 +39,12 @@ const investors = [
     lineColor: 'bg-violet-500',
   },
 ];
+const sections = [
+  { label: 'Dashboard', slug: '' },
+  { label: 'Backtesting', slug: '/backtesting' },
+  { label: 'Reglas', slug: '/reglas' },
+  { label: 'Trading Plan', slug: '/trading-plan' },
+];
 
 export default function CoverPage() {
   return (
@@ -56,17 +62,15 @@ export default function CoverPage() {
       />
 
       {investors.map((investor, idx) => (
-        <Link
+        <div
           key={investor.id}
-          href={investor.href}
           id={`investor-card-${investor.id}`}
           className={`
             group relative flex flex-1 flex-col items-center justify-center
-            min-h-[50vh] md:min-h-screen cursor-pointer
+            min-h-[50vh] md:min-h-screen
             bg-gradient-to-br ${investor.accent}
             transition-all duration-500 ease-out
             hover:flex-[1.12]
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
           `}
           style={{ ['--glow' as string]: investor.glowColor }}
         >
@@ -128,22 +132,26 @@ export default function CoverPage() {
               </p>
             </div>
 
-            {/* Dashboard button */}
-            <button
-              tabIndex={-1}
-              aria-hidden
-              className={`
-                mt-2 inline-flex items-center gap-2 rounded-xl
-                bg-gradient-to-r ${investor.buttonGradient} ${investor.buttonHover}
-                px-7 py-3 text-sm font-semibold text-white
-                shadow-lg transition-all duration-300
-                group-hover:shadow-xl group-hover:gap-3
-                group-hover:scale-105
-              `}
-            >
-              Dashboard
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
-            </button>
+            {/* Section buttons */}
+            <div className="mt-2 grid grid-cols-2 gap-2 w-full max-w-xs">
+              {sections.map((section) => (
+                <Link
+                  key={section.label}
+                  href={`/dashboard/${investor.id}${section.slug}`}
+                  className={`
+                    inline-flex items-center justify-center gap-1.5 rounded-xl
+                    bg-gradient-to-r ${investor.buttonGradient} ${investor.buttonHover}
+                    px-4 py-2.5 text-sm font-semibold text-white
+                    shadow-md transition-all duration-300
+                    hover:shadow-xl hover:scale-105
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50
+                  `}
+                >
+                  {section.label}
+                  <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-300" aria-hidden />
+                </Link>
+              ))}
+            </div>
 
           </div>
 
@@ -158,7 +166,7 @@ export default function CoverPage() {
               }}
             />
           )}
-        </Link>
+        </div>
       ))}
 
       {/* Center logo / title */}

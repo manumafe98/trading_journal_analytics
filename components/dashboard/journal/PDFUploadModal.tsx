@@ -3,9 +3,10 @@
 import { useState, useCallback, useRef } from 'react';
 import {
     XIcon, UploadIcon, FileTextIcon, CheckIcon,
-    AlertCircleIcon, Loader2Icon, TrendingUpIcon, TrendingDownIcon,
+    AlertCircleIcon, Loader2Icon
 } from 'lucide-react';
-import { parsePDFToTrades } from '@/lib/journal/pdfParser';
+import { parseCSVToTrades } from '@/lib/journal/csvParser';
+import { parseMDToTrades } from '@/lib/journal/mdParser';
 import type { Trade } from '@/lib/journal/types';
 
 interface Props {
@@ -17,40 +18,42 @@ interface Props {
 
 type Step = 'upload' | 'parsing' | 'preview' | 'error' | 'done';
 
-export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: Props) {
+export function ImportModal({ accountId, onImport, onImportMany, onClose }: Props) {
     const [step, setStep] = useState<Step>('upload');
     const [errorMsg, setErrorMsg] = useState('');
     const [parsed, setParsed] = useState<Omit<Trade, 'id'>[]>([]);
     const [isDragging, setIsDragging] = useState(false);
-    const [debugLines, setDebugLines] = useState<string[]>([]);
-    const [showDebug, setShowDebug] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const processFile = async (file: File) => {
-        if (!file.name.toLowerCase().endsWith('.pdf')) {
-            setErrorMsg('El archivo debe ser un PDF.');
+        const isCSV = file.name.toLowerCase().endsWith('.csv');
+        const isMD = file.name.toLowerCase().endsWith('.md') || file.name.toLowerCase().endsWith('.txt');
+
+        if (!isCSV && !isMD) {
+            setErrorMsg('El archivo debe ser CSV o Markdown (.md / .txt).');
             setStep('error');
             return;
         }
+
         setStep('parsing');
         try {
-            const trades = await parsePDFToTrades(file, accountId);
+            let trades: Omit<Trade, 'id'>[] = [];
+
+            if (isCSV) {
+                trades = await parseCSVToTrades(file, accountId);
+            } else {
+                trades = await parseMDToTrades(file, accountId);
+            }
+
             if (trades.length === 0) {
-                setErrorMsg('Se leyó el PDF pero no se detectaron trades. Asegurate de exportar la BASE DE DATOS de Notion completa (no una página individual aislada). El PDF debe tener columnas como "Par", "Fecha", "Resultado", etc.');
+                setErrorMsg(`Se leyó el archivo pero no se detectaron trades. Asegurate de que el formato coincida con tu tabla de Notion (ej: "Par: EURUSD").`);
                 setStep('error');
                 return;
             }
             setParsed(trades);
             setStep('preview');
         } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            // Common pdfjs errors
-            const hint = msg.includes('worker') || msg.includes('Worker')
-                ? ' (Error al cargar el motor PDF. Intentá recargar la página e intentar de nuevo.)'
-                : msg.includes('password')
-                    ? ' (El PDF está protegido con contraseña.)'
-                    : '';
-            setErrorMsg(`${msg}${hint}`);
+            setErrorMsg(e instanceof Error ? e.message : String(e));
             setStep('error');
         }
     };
@@ -62,7 +65,7 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
             const file = e.dataTransfer.files[0];
             if (file) processFile(file);
         },
-        [accountId],
+        [accountId]
     );
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,7 +78,6 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
         if (onImportMany) {
             onImportMany(parsed);
         } else {
-            // Fallback: import one by one
             parsed.forEach((t) => onImport(t));
         }
         setStep('done');
@@ -88,8 +90,8 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-6 py-4">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">Importar Journal PDF</h2>
-                        <p className="text-xs text-gray-400 mt-0.5">Exportación de tabla Notion · lectura automática de todos los trades</p>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">Importar Trades de Notion</h2>
+                        <p className="text-xs text-gray-400 mt-0.5">Soporta exportaciones en formato CSV o Markdown (.md)</p>
                     </div>
                     <button onClick={onClose} className="cursor-pointer rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <XIcon className="h-5 w-5" />
@@ -97,7 +99,6 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                 </div>
 
                 <div className="px-6 py-5">
-
                     {/* STEP: upload */}
                     {step === 'upload' && (
                         <>
@@ -111,27 +112,28 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                                     : 'border-gray-200 dark:border-gray-600 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                                     }`}
                             >
-                                <input ref={inputRef} type="file" accept=".pdf" onChange={onFileChange} className="hidden" />
+                                <input ref={inputRef} type="file" accept=".csv,.md,.txt" onChange={onFileChange} className="hidden" />
                                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 dark:bg-primary-900/30">
                                     <UploadIcon className="h-7 w-7 text-primary-500" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-800 dark:text-gray-200">Arrastrá tu PDF aquí</p>
-                                    <p className="text-sm text-gray-400 mt-1">o hacé click para seleccionar el archivo</p>
+                                    <p className="font-semibold text-gray-800 dark:text-gray-200">Arrastrá tu exportación de Notion aquí</p>
+                                    <p className="text-sm text-gray-400 mt-1">.csv o .md (Markdown)</p>
                                 </div>
                                 <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Exportación de base de datos Notion (.pdf)
+                                    Click para seleccionar archivo
                                 </span>
                             </div>
 
                             {/* How to export guide */}
                             <div className="mt-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 px-4 py-3 text-xs text-blue-700 dark:text-blue-400">
-                                <p className="font-semibold mb-1">¿Cómo exportar de Notion?</p>
+                                <p className="font-semibold mb-1">¿Cómo exportar de Notion para que funcione perfecto?</p>
                                 <ol className="list-decimal list-inside space-y-0.5 text-blue-600 dark:text-blue-300">
                                     <li>Abrí tu tabla de trades en Notion</li>
-                                    <li>Hacé click en ··· (tres puntos) → <strong>Export</strong></li>
-                                    <li>Elegí formato <strong>PDF</strong> y descargá</li>
-                                    <li>Subí ese archivo acá</li>
+                                    <li>Hacé click en ··· (tres puntos arriba a la derecha) → <strong>Export</strong></li>
+                                    <li>En Formato, seleccioná <strong>Markdown & CSV</strong></li>
+                                    <li>Hacé click en <strong>Export</strong> (se descargará un .zip)</li>
+                                    <li>Extraé el ZIP. Podés subir tanto el archivo <strong>.csv</strong> de la tabla como los <strong>.md</strong> individuales de cada trade.</li>
                                 </ol>
                             </div>
                         </>
@@ -141,7 +143,7 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                     {step === 'parsing' && (
                         <div className="flex flex-col items-center justify-center gap-4 py-16">
                             <Loader2Icon className="h-10 w-10 animate-spin text-primary-500" />
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Analizando el PDF y extrayendo trades...</p>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Procesando el archivo...</p>
                         </div>
                     )}
 
@@ -152,7 +154,7 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                                 <AlertCircleIcon className="h-7 w-7 text-red-500" />
                             </div>
                             <div>
-                                <p className="font-semibold text-gray-900 dark:text-gray-50">No se pudo leer el PDF</p>
+                                <p className="font-semibold text-gray-900 dark:text-gray-50">Hubo un problema con el archivo</p>
                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-sm">{errorMsg}</p>
                             </div>
                             <button
@@ -223,7 +225,7 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                                                         ) : <span className="text-gray-300">—</span>}
                                                     </td>
                                                     <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                                                        {t.rrObtained != null ? `${t.rrObtained}R` : '—'}
+                                                        {t.rrObtained != null && t.rrObtained !== 0 ? `${t.rrObtained}R` : '—'}
                                                     </td>
                                                     <td className={`px-3 py-2 font-bold tabular-nums ${pnlPos ? 'text-green-600' : 'text-red-500'}`}>
                                                         {pnlPos ? '+' : ''}{t.pnl.toFixed(2)}
@@ -241,7 +243,7 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                             </div>
 
                             <div className="mb-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
-                                <strong>Nota:</strong> Las columnas extras (Ejecutable, Pullback, Gestión, etc.) se importan si están en el PDF. Los precios de entrada/salida no están disponibles en Notion — podés completarlos desde la tabla después.
+                                <strong>Nota:</strong> Los precios de entrada y salida generalmente no están en Notion, podrás completarlos desde la tabla si los necesitas para otros cálculos.
                             </div>
 
                             <div className="flex gap-3">
@@ -249,7 +251,7 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
                                     onClick={() => setStep('upload')}
                                     className="flex-1 cursor-pointer rounded-xl border border-gray-200 dark:border-gray-600 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                                 >
-                                    Subir otro PDF
+                                    Subir otro archivo
                                 </button>
                                 <button
                                     onClick={handleImport}
@@ -266,3 +268,4 @@ export function PDFUploadModal({ accountId, onImport, onImportMany, onClose }: P
         </div>
     );
 }
+

@@ -4,13 +4,16 @@ export function NavItem({
     icon: Icon,
     label,
     active = false,
+    onClick,
 }: {
     icon: React.ComponentType<{ className?: string }>;
     label: string;
     active?: boolean;
+    onClick?: () => void;
 }) {
     return (
         <button
+            onClick={onClick}
             className={`
         flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
         cursor-pointer transition-colors

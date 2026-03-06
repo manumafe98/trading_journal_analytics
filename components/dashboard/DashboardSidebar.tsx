@@ -11,6 +11,8 @@ import {
     XIcon,
 } from 'lucide-react';
 import { NavItem } from './NavItem';
+import { useState } from 'react';
+import { SettingsModal } from './SettingsModal';
 
 export function DashboardSidebar({
     isOpen,
@@ -19,6 +21,8 @@ export function DashboardSidebar({
     isOpen: boolean;
     onClose: () => void;
 }) {
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     return (
         <>
             {/* Overlay */}
@@ -88,7 +92,11 @@ export function DashboardSidebar({
                             Apps
                         </div>
                         <div className="space-y-1">
-                            <NavItem icon={SettingsIcon} label="Settings" />
+                            <NavItem
+                                icon={SettingsIcon}
+                                label="Settings AI"
+                                onClick={() => setIsSettingsOpen(true)}
+                            />
                             <NavItem icon={HelpCircleIcon} label="Support" />
                         </div>
                     </div>
@@ -107,6 +115,10 @@ export function DashboardSidebar({
                     </button>
                 </div>
             </aside>
+
+            {isSettingsOpen && (
+                <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+            )}
         </>
     );
 }
