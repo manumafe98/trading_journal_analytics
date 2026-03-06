@@ -75,22 +75,6 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        'accent-success': {
-          DEFAULT: '#10B981',
-          bg: '#D1FAE5',
-        },
-        'accent-danger': {
-          DEFAULT: '#EF4444',
-          bg: '#FEE2E2',
-        },
-        'accent-info': {
-          DEFAULT: '#3B82F6',
-          bg: '#DBEAFE',
-        },
-        surface: {
-          DEFAULT: '#FFFFFF',
-          inverted: '#1F2937',
-        },
       },
       typography: ({ theme }) => ({
         DEFAULT: {
