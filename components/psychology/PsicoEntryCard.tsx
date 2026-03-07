@@ -37,14 +37,14 @@ export function PsicoEntryCard({ entry, onClick }: PsicoEntryCardProps) {
   return (
     <div 
       onClick={onClick}
-      className="group relative flex min-w-[280px] sm:min-w-[320px] max-w-[320px] shrink-0 cursor-pointer flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-blue-500/50"
+      className="group relative flex min-w-[280px] sm:min-w-[320px] max-w-[320px] shrink-0 cursor-pointer flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-primary-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-primary-500/50"
     >
       <div className="flex items-start justify-between">
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
           {dateStr}
         </span>
         {entry.linkedTradeId ? (
-          <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+          <span className="inline-flex items-center rounded-md bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
             {linkedTrade ? `${linkedTrade.pair} ${linkedTrade.direction}` : entry.linkedTradeId}
           </span>
         ) : (
@@ -61,7 +61,7 @@ export function PsicoEntryCard({ entry, onClick }: PsicoEntryCardProps) {
       <div className="mt-2 flex items-center gap-2">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
           <div 
-            className="h-full rounded-full bg-blue-500 transition-all" 
+            className="h-full rounded-full bg-primary-500 transition-all" 
             style={{ width: `${progressPercent}%` }}
           />
         </div>

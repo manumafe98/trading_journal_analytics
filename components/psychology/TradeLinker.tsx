@@ -19,7 +19,7 @@ export function TradeLinker({ selectedTradeId, onChange, className = '' }: Trade
         <select
           value={selectedTradeId || ''}
           onChange={(e) => onChange(e.target.value || undefined)}
-          className="w-full sm:w-64 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          className="w-full sm:w-64 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
         >
           <option value="">-- No trade linked --</option>
           {sampleTrades.map((trade) => (
@@ -36,7 +36,7 @@ export function TradeLinker({ selectedTradeId, onChange, className = '' }: Trade
         )}
         
         {selectedTrade && (
-          <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+          <span className="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
             {selectedTrade.pair} • {selectedTrade.direction} • {selectedTrade.date}
           </span>
         )}
