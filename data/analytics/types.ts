@@ -180,3 +180,36 @@ export interface FullAnalytics {
   commission_impact: AnalyticsSection<CommissionImpact>;
   swap_impact: AnalyticsSection<SwapImpact>;
 }
+
+// ── Psicotrading Data Model ────────────────────────────────────────────────
+export interface PsicoEntry {
+  id: string;                  // uuid
+  createdAt: Date | string;    // depending on serialization it might be a string
+  updatedAt: Date | string;
+  linkedTradeId?: string;      // optional, can be set later
+
+  // Section A — Before opening the chart
+  emotionBeforeChart: string;
+
+  // Section C — Before executing the trade
+  emotionBeforeExecution: string;
+  scenarioWaitingFor: string;
+  feelingWhileWaiting: string;
+  intensityBeforeExecution: number; // 1–10
+  physicalSensationsBeforeExecution: string;
+
+  // Section D — During the trade
+  emotionDuringTrade: string;
+  intensityDuringTrade: number;     // 1–10
+  physicalSensationsDuringTrade: string;
+  experiencingHope: string;
+  regretBeingInTrade: string;
+
+  // Section E — After closing the trade
+  emotionAfterTrade: string;
+  intensityAfterTrade: number;      // 1–10
+  changedPlan: string;
+  physicalSensationsAfterTrade: string;
+  whatDidWell: string;
+  whatCouldImprove: string;
+}

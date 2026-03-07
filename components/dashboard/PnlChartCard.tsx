@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { pnlBarDataWeekly, pnlBarDataMonthly, type PnlBarData } from '@/data/dashboard/sampleData';
+import { cn } from '@/lib/utils';
 
 interface PnlChartCardProps {
   className?: string;
@@ -14,8 +15,12 @@ export function PnlChartCard({ className = '' }: PnlChartCardProps) {
 
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-surface ${className}`}
+      className={cn(
+        'group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700',
+        className
+      )}
     >
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>

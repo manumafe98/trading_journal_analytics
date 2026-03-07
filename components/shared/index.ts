@@ -11,3 +11,4 @@ export { PageTitle } from './PageTitle';
 export { ScrollTop } from './ScrollTop';
 export { ThemeSwitch } from './ThemeSwitch';
 export { VideoPlayer } from './VideoPlayer';
+export { StatsCard } from './StatsCard';

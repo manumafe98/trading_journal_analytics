@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sidebar, TopBar, FloatingDock } from '@/components/dashboard';
+import { Sidebar, TopBar } from '@/components/dashboard';
 
 export default function DashboardLayout({
   children,
@@ -18,7 +18,7 @@ export default function DashboardLayout({
       {/* Main area */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Bar */}
-        <TopBar />
+        <TopBar onOpenSidebar={() => setSidebarOpen(true)} />
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto px-4 py-6 pb-24 lg:px-8">
@@ -27,9 +27,6 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
-
-      {/* Floating Action Dock */}
-      <FloatingDock />
     </div>
   );
 }

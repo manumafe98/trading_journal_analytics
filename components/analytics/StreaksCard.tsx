@@ -22,8 +22,9 @@ export function StreaksCard({ data, summary }: StreaksCardProps) {
       : 'bg-gray-500/10 border-gray-500/20';
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900/50">
-      <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+    <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700">
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
+      <div className="relative border-b border-gray-100 px-5 py-4 dark:border-gray-800">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Streaks</h2>
         <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{summary}</p>
       </div>

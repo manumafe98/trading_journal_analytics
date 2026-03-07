@@ -10,12 +10,14 @@ export interface ColumnDef<T> {
 }
 
 interface AnalyticsCardProps<T> {
-  title: string;
+  title?: string;
   summary?: string;
   icon?: React.ReactNode;
+  action?: React.ReactNode;
   columns: ColumnDef<T>[];
   data: T[];
   emptyMessage?: string;
+  className?: string;
 }
 
 function PnlValue({ value }: { value: number }) {
@@ -47,20 +49,28 @@ export function AnalyticsCard<T>({
   title,
   summary,
   icon,
+  action,
   columns,
   data,
   emptyMessage = 'No data available.',
+  className = '',
 }: AnalyticsCardProps<T>) {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900/50">
-      <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          {icon && <span className="text-gray-400 dark:text-gray-500">{icon}</span>}
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-50">{title}</h2>
+    <div className={`group relative overflow-hidden flex flex-col rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700 ${className}`}>
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
+      <div className="relative border-b border-gray-100 px-5 py-4 dark:border-gray-800 shrink-0">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              {icon && <span className="text-gray-400 dark:text-gray-500">{icon}</span>}
+              {title && <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-50">{title}</h2>}
+            </div>
+            {summary && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">{summary}</p>
+            )}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
         </div>
-        {summary && (
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{summary}</p>
-        )}
       </div>
 
       {data.length === 0 ? (
@@ -68,7 +78,7 @@ export function AnalyticsCard<T>({
           {emptyMessage}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800">

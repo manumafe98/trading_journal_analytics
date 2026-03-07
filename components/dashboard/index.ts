@@ -5,5 +5,4 @@ export { PnlChartCard } from './PnlChartCard';
 export { EquityChartCard } from './EquityChartCard';
 export { TradingObjectivesGrid } from './TradingObjectives';
 export { TradingHistoryTable } from './TradingHistory';
-export { FloatingDock } from './FloatingDock';
 export { ControlBar } from './ControlBar';
