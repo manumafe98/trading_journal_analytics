@@ -1,4 +1,4 @@
-import { Nunito_Sans } from 'next/font/google';
+import { Outfit, Space_Grotesk } from 'next/font/google';
 import { siteConfig } from '@/data/config/site.settings';
 import { ThemeProviders } from './theme-providers';
 import { Metadata } from 'next';
@@ -9,23 +9,24 @@ import '@/css/globals.css';
 import { SearchProvider } from '@/components/shared/SearchProvider';
 import { AnalyticsWrapper } from '@/components/shared/Analytics';
 
-const displayFont = Nunito_Sans({
+const displayFont = Space_Grotesk({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-space-display',
 });
 
-const baseFont = Nunito_Sans({
+const baseFont = Outfit({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-space-default',
 });
 
-const globalColors = colors;
+type ColorsObject = Record<string, Record<string, string>>;
+const globalColors = colors as ColorsObject;
 const style: string[] = [];
 
-Object.keys(globalColors).map((variant) => {
-  return Object.keys(globalColors[variant]).map((color) => {
+Object.keys(globalColors).forEach((variant) => {
+  Object.keys(globalColors[variant]).forEach((color) => {
     const value = globalColors[variant][color];
     style.push(`--${variant}-${color}: ${value}`);
   });

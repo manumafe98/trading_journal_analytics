@@ -1,6 +1,6 @@
 'use client';
 
-import { usePsicoEntries } from '../../hooks/usePsicoEntries';
+import { usePsicoEntries } from '@/hooks/usePsicoEntries';
 import { PsicoEntryForm } from './PsicoEntryForm';
 import { PsicoEntryList } from './PsicoEntryList';
 

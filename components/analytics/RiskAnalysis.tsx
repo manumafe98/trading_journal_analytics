@@ -1,7 +1,7 @@
 'use client';
 
 import { ShieldAlertIcon } from 'lucide-react';
-import { RiskAnalysis } from '@/data/analytics/types';
+import { RiskAnalysis, RiskLevelStats } from '@/data/analytics/types';
 import { AnalyticsCard, PnlValue, WinRateValue, type ColumnDef } from './AnalyticsCard';
 
 interface RiskAnalysisCardProps {
@@ -9,7 +9,7 @@ interface RiskAnalysisCardProps {
   summary: string;
 }
 
-const riskColumns: ColumnDef<any>[] = [
+const riskColumns: ColumnDef<RiskLevelStats>[] = [
   { key: 'level', label: 'Risk Level', render: (item) => (
     <span className="font-medium text-gray-900 dark:text-gray-100">{item.risk_level}</span>
   )},

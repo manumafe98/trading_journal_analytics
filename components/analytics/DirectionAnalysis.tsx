@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowUpDownIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
-import { DirectionStats } from '@/data/analytics/types';
+import { DirectionStats, TradeDirection } from '@/data/analytics/types';
 import { PnlValue, WinRateValue } from './AnalyticsCard';
 
 interface DirectionAnalysisProps {
@@ -10,8 +10,8 @@ interface DirectionAnalysisProps {
 }
 
 export function DirectionAnalysis({ data, summary }: DirectionAnalysisProps) {
-  const longData = data.find(d => d.direction === 'LONG');
-  const shortData = data.find(d => d.direction === 'SHORT');
+  const longData = data.find(({ direction }) => direction === TradeDirection.Long);
+  const shortData = data.find(({ direction }) => direction === TradeDirection.Short);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900/50">

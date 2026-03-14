@@ -5,9 +5,28 @@
 // Riesgo → risk, Resultado → result, P&L → pnl, Comision → commission,
 // Duracion → duration, RR → riskReward
 
-export type TradeResult = 'Take Profit' | 'Stop Loss' | 'Break Even';
-export type TradeDirection = 'LONG' | 'SHORT';
-export type TradeStyle = 'SCALPING' | 'DAY' | 'SWING';
+export enum TradeResult {
+  TakeProfit = 'Take Profit',
+  StopLoss = 'Stop Loss',
+  BreakEven = 'Break Even',
+}
+
+export enum TradeDirection {
+  Long = 'LONG',
+  Short = 'SHORT',
+}
+
+export enum TradeStyle {
+  Scalping = 'SCALPING',
+  Day = 'DAY',
+  Swing = 'SWING',
+}
+
+export enum StreakType {
+  Win = 'win',
+  Loss = 'loss',
+  None = 'none',
+}
 
 export interface JournalTrade {
   id: string;
@@ -47,7 +66,7 @@ export interface StreaksData {
   longest_win_streak: number;
   longest_loss_streak: number;
   current_streak: {
-    type: 'win' | 'loss' | 'none';
+    type: StreakType;
     count: number;
   };
 }

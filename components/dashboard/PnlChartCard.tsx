@@ -16,11 +16,12 @@ export function PnlChartCard({ className = '' }: PnlChartCardProps) {
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700',
+        'group relative overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 p-5 transition-all duration-500 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]',
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
+      {/* Subtle glow effect on hover via gradient */}
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>

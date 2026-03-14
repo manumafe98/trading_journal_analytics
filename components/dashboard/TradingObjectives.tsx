@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 export function TradingObjectivesGrid() {
   return (
     <section>
-      <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-50">
+      <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 dark:text-gray-50/80 uppercase">
         Trading Objectives
       </h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -42,10 +42,10 @@ function ObjectiveCard({ objective }: { objective: TradingObjective }) {
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4 transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700'
+        'group relative overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 p-4 transition-all duration-500 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]'
       )}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
       <div className="relative">
         {/* Header */}
         <div className="mb-3 flex items-center justify-between">

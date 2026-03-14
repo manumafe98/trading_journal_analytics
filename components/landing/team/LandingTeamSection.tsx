@@ -32,11 +32,11 @@ import React from 'react';
  *   />
  * </LandingTeamSection>
  */
-export type TeamMember = {
+export interface TeamMember {
   name: string;
   role: string;
   imageSrc: string;
-};
+}
 
 export function LandingTeamSection({
   className,

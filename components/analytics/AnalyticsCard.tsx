@@ -56,9 +56,9 @@ export function AnalyticsCard<T>({
   className = '',
 }: AnalyticsCardProps<T>) {
   return (
-    <div className={`group relative overflow-hidden flex flex-col rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700 ${className}`}>
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
-      <div className="relative border-b border-gray-100 px-5 py-4 dark:border-gray-800 shrink-0">
+    <div className={`group relative overflow-hidden flex flex-col rounded-xl border border-gray-200/50 bg-white/60 transition-all duration-500 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] ${className}`}>
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
+      <div className="relative border-b border-gray-200/50 px-5 py-4 dark:border-white/5 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -81,11 +81,11 @@ export function AnalyticsCard<T>({
         <div className="flex-1 overflow-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
+              <tr className="border-b border-gray-200/50 dark:border-white/5 bg-gray-50/50 dark:bg-black/20">
                 {columns.map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 ${
+                    className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400 ${
                       col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
                     }`}
                   >
@@ -94,11 +94,11 @@ export function AnalyticsCard<T>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
+            <tbody className="divide-y divide-gray-200/50 dark:divide-white/5">
               {data.map((item, index) => (
                 <tr
                   key={index}
-                  className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                  className="transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.02]"
                 >
                   {columns.map((col) => (
                     <td

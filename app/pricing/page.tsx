@@ -126,6 +126,7 @@ export default function PricingPage() {
                         tier.featured ? 'text-white dark:text-black' : '',
                         'text-4xl font-bold tracking-tight',
                         tier.discountPrice &&
+                          typeof tier.discountPrice !== 'string' &&
                           tier.discountPrice[frequency.value]
                           ? 'line-through'
                           : '',
@@ -141,9 +142,11 @@ export default function PricingPage() {
                         tier.featured ? 'text-white dark:text-black' : '',
                       )}
                     >
-                      {typeof tier.discountPrice === 'string'
-                        ? tier.discountPrice
-                        : tier.discountPrice[frequency.value]}
+                      {tier.discountPrice
+                        ? typeof tier.discountPrice === 'string'
+                          ? tier.discountPrice
+                          : tier.discountPrice[frequency.value]
+                        : null}
                     </span>
 
                     {typeof tier.price !== 'string' ? (

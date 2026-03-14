@@ -36,12 +36,12 @@ function SidebarNavItem({ icon, label, active = false, href, onClick }: SidebarN
         transition-colors duration-200
         ${
           active
-            ? 'bg-gray-100 text-gray-900 border-l-2 border-primary dark:bg-gray-900 dark:text-primary'
-            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-50'
+            ? 'bg-primary/10 text-primary border-l-2 border-primary font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] dark:bg-primary/10 dark:text-primary'
+            : 'text-gray-500 hover:bg-gray-100/50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-100'
         }
       `}
     >
-      <span className={active ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300'}>
+      <span className={active ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-200'}>
         {icon}
       </span>
       <span>{label}</span>
@@ -73,20 +73,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 flex w-60 flex-col
-          border-r border-gray-200 bg-white
+          border-r border-gray-200/50 bg-white/70 backdrop-blur-2xl
           transition-transform duration-300
-          dark:border-gray-800 dark:bg-surface
+          dark:border-white/[0.05] dark:bg-black/20
           lg:relative lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         {/* Brand Header */}
-        <div className="flex items-center justify-between px-5 py-5">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-bold text-gray-950">
+        <div className="flex items-center justify-between px-6 py-6">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-700 shadow-neon-glow font-bold text-gray-950">
               E
             </div>
-            <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white font-display">
               EdgeLog
             </span>
           </Link>

@@ -7,7 +7,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from 'lucide-react';
-import { tradeHistory, type Trade } from '@/data/dashboard/sampleData';
+import { tradeHistory, DashboardTradeDirection, TradeStatus, type Trade } from '@/data/dashboard/sampleData';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -112,24 +112,25 @@ export function TradingHistoryTable() {
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 function TradeRow({ trade }: { trade: Trade }) {
-  const isPositive = trade.pnlPercent >= 0;
+  const { pnlPercent, id, symbol, direction, entryPrice, exitPrice, pnl, date, riskReward, status } = trade;
+  const isPositive = pnlPercent >= 0;
 
   return (
     <tr className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
       <td className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {trade.id}
+        {id}
       </td>
       <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-50">
-        {trade.symbol}
+        {symbol}
       </td>
       <td className="px-4 py-3">
-        <DirectionBadge direction={trade.direction} />
+        <DirectionBadge direction={direction} />
       </td>
       <td className="hidden px-4 py-3 text-right text-sm tabular-nums text-gray-600 dark:text-gray-400 md:table-cell">
-        ${trade.entryPrice}
+        ${entryPrice}
       </td>
       <td className="hidden px-4 py-3 text-right text-sm tabular-nums text-gray-600 dark:text-gray-400 md:table-cell">
-        {trade.exitPrice === '—' ? '—' : `$${trade.exitPrice}`}
+        {exitPrice === '—' ? '—' : `$${exitPrice}`}
       </td>
       <td className="px-4 py-3 text-right">
         <span
@@ -137,63 +138,63 @@ function TradeRow({ trade }: { trade: Trade }) {
             isPositive ? 'text-primary' : 'text-accent-negative'
           }`}
         >
-          {trade.pnl}
+          {pnl}
         </span>
         <span
           className={`ml-1 text-xs tabular-nums ${
             isPositive ? 'text-primary/70' : 'text-accent-negative/70'
           }`}
         >
-          ({isPositive ? '+' : ''}{trade.pnlPercent}%)
+          ({isPositive ? '+' : ''}{pnlPercent}%)
         </span>
       </td>
       <td className="hidden px-4 py-3 text-sm text-gray-500 dark:text-gray-400 lg:table-cell">
-        {trade.date}
+        {date}
       </td>
       <td className="hidden px-4 py-3 text-sm tabular-nums text-gray-500 dark:text-gray-400 lg:table-cell">
-        {trade.riskReward}
+        {riskReward}
       </td>
       <td className="px-4 py-3">
-        <StatusBadge status={trade.status} />
+        <StatusBadge status={status} />
       </td>
     </tr>
   );
 }
 
-function DirectionBadge({ direction }: { direction: 'long' | 'short' }) {
+function DirectionBadge({ direction }: { direction: DashboardTradeDirection }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-        direction === 'long'
+        direction === DashboardTradeDirection.Long
           ? 'bg-primary/10 text-primary'
           : 'bg-accent-negative/10 text-accent-negative'
       }`}
     >
-      {direction === 'long' ? (
+      {direction === DashboardTradeDirection.Long ? (
         <ArrowUpIcon className="h-3 w-3" />
       ) : (
         <ArrowDownIcon className="h-3 w-3" />
       )}
-      {direction === 'long' ? 'Long' : 'Short'}
+      {direction === DashboardTradeDirection.Long ? 'Long' : 'Short'}
     </span>
   );
 }
 
-function StatusBadge({ status }: { status: 'closed' | 'open' }) {
+function StatusBadge({ status }: { status: TradeStatus }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        status === 'open'
+        status === TradeStatus.Open
           ? 'bg-secondary/10 text-secondary border border-secondary/20'
           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
       }`}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          status === 'open' ? 'bg-secondary animate-pulse' : 'bg-gray-400 dark:bg-gray-600'
+          status === TradeStatus.Open ? 'bg-secondary animate-pulse' : 'bg-gray-400 dark:bg-gray-600'
         }`}
       />
-      {status === 'open' ? 'Open' : 'Closed'}
+      {status === TradeStatus.Open ? 'Open' : 'Closed'}
     </span>
   );
 }

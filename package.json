@@ -99,6 +99,7 @@
     "@next/bundle-analyzer": "^15.5.9",
     "@svgr/webpack": "^8.1.0",
     "@types/mdx": "^2.0.13",
+    "@types/mime-types": "^3.0.1",
     "@types/react": "^19.2.1",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",

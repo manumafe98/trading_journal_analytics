@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Format a duration in minutes to a human-readable "Xh Ym" string */
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export function convertToRgba({
   color,
   opacity,

@@ -171,6 +171,7 @@ export const LandingLeadingPill = ({
   };
 
   const textStyleClasses = {
+    default: '',
     capitalize: 'capitalize',
     uppercase: 'uppercase tracking-wider',
   };

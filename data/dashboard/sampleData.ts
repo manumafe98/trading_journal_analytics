@@ -95,13 +95,20 @@ export const tradingObjectives: TradingObjective[] = [
 ];
 
 // ── Trading History ─────────────────────────────────────────────────────────
-export type TradeDirection = 'long' | 'short';
-export type TradeStatus = 'closed' | 'open';
+export enum DashboardTradeDirection {
+  Long = 'long',
+  Short = 'short',
+}
+
+export enum TradeStatus {
+  Closed = 'closed',
+  Open = 'open',
+}
 
 export interface Trade {
   id: string;
   symbol: string;
-  direction: TradeDirection;
+  direction: DashboardTradeDirection;
   entryPrice: string;
   exitPrice: string;
   pnl: string;
@@ -113,14 +120,14 @@ export interface Trade {
 }
 
 export const tradeHistory: Trade[] = [
-  { id: 'T-001', symbol: 'BTC/USD', direction: 'long', entryPrice: '65,200.00', exitPrice: '67,432.10', pnl: '+$2,232.10', pnlPercent: 3.42, date: 'Mar 5, 2026', duration: '4h 32m', status: 'closed', riskReward: '1:2.8' },
-  { id: 'T-002', symbol: 'ETH/USD', direction: 'short', entryPrice: '3,580.00', exitPrice: '3,521.45', pnl: '+$585.50', pnlPercent: 1.64, date: 'Mar 5, 2026', duration: '2h 15m', status: 'closed', riskReward: '1:1.9' },
-  { id: 'T-003', symbol: 'SOL/USD', direction: 'long', entryPrice: '172.30', exitPrice: '178.92', pnl: '+$662.00', pnlPercent: 3.84, date: 'Mar 4, 2026', duration: '6h 45m', status: 'closed', riskReward: '1:3.2' },
-  { id: 'T-004', symbol: 'AAPL', direction: 'long', entryPrice: '191.50', exitPrice: '189.25', pnl: '-$225.00', pnlPercent: -1.18, date: 'Mar 4, 2026', duration: '1d 2h', status: 'closed', riskReward: '1:0.6' },
-  { id: 'T-005', symbol: 'TSLA', direction: 'short', entryPrice: '242.80', exitPrice: '248.30', pnl: '-$550.00', pnlPercent: -2.27, date: 'Mar 3, 2026', duration: '8h 10m', status: 'closed', riskReward: '1:0.4' },
-  { id: 'T-006', symbol: 'BTC/USD', direction: 'long', entryPrice: '66,800.00', exitPrice: '—', pnl: '+$632.10', pnlPercent: 0.95, date: 'Mar 6, 2026', duration: '—', status: 'open', riskReward: '—' },
-  { id: 'T-007', symbol: 'ETH/USD', direction: 'long', entryPrice: '3,490.00', exitPrice: '3,540.20', pnl: '+$502.00', pnlPercent: 1.44, date: 'Mar 3, 2026', duration: '5h 22m', status: 'closed', riskReward: '1:2.1' },
-  { id: 'T-008', symbol: 'SOL/USD', direction: 'short', entryPrice: '181.40', exitPrice: '176.90', pnl: '+$450.00', pnlPercent: 2.48, date: 'Mar 2, 2026', duration: '3h 18m', status: 'closed', riskReward: '1:2.5' },
-  { id: 'T-009', symbol: 'AAPL', direction: 'long', entryPrice: '187.60', exitPrice: '190.30', pnl: '+$270.00', pnlPercent: 1.44, date: 'Mar 2, 2026', duration: '1d 4h', status: 'closed', riskReward: '1:1.8' },
-  { id: 'T-010', symbol: 'TSLA', direction: 'long', entryPrice: '238.50', exitPrice: '245.70', pnl: '+$720.00', pnlPercent: 3.02, date: 'Mar 1, 2026', duration: '6h 55m', status: 'closed', riskReward: '1:2.6' },
+  { id: 'T-001', symbol: 'BTC/USD', direction: DashboardTradeDirection.Long, entryPrice: '65,200.00', exitPrice: '67,432.10', pnl: '+$2,232.10', pnlPercent: 3.42, date: 'Mar 5, 2026', duration: '4h 32m', status: TradeStatus.Closed, riskReward: '1:2.8' },
+  { id: 'T-002', symbol: 'ETH/USD', direction: DashboardTradeDirection.Short, entryPrice: '3,580.00', exitPrice: '3,521.45', pnl: '+$585.50', pnlPercent: 1.64, date: 'Mar 5, 2026', duration: '2h 15m', status: TradeStatus.Closed, riskReward: '1:1.9' },
+  { id: 'T-003', symbol: 'SOL/USD', direction: DashboardTradeDirection.Long, entryPrice: '172.30', exitPrice: '178.92', pnl: '+$662.00', pnlPercent: 3.84, date: 'Mar 4, 2026', duration: '6h 45m', status: TradeStatus.Closed, riskReward: '1:3.2' },
+  { id: 'T-004', symbol: 'AAPL', direction: DashboardTradeDirection.Long, entryPrice: '191.50', exitPrice: '189.25', pnl: '-$225.00', pnlPercent: -1.18, date: 'Mar 4, 2026', duration: '1d 2h', status: TradeStatus.Closed, riskReward: '1:0.6' },
+  { id: 'T-005', symbol: 'TSLA', direction: DashboardTradeDirection.Short, entryPrice: '242.80', exitPrice: '248.30', pnl: '-$550.00', pnlPercent: -2.27, date: 'Mar 3, 2026', duration: '8h 10m', status: TradeStatus.Closed, riskReward: '1:0.4' },
+  { id: 'T-006', symbol: 'BTC/USD', direction: DashboardTradeDirection.Long, entryPrice: '66,800.00', exitPrice: '\u2014', pnl: '+$632.10', pnlPercent: 0.95, date: 'Mar 6, 2026', duration: '\u2014', status: TradeStatus.Open, riskReward: '\u2014' },
+  { id: 'T-007', symbol: 'ETH/USD', direction: DashboardTradeDirection.Long, entryPrice: '3,490.00', exitPrice: '3,540.20', pnl: '+$502.00', pnlPercent: 1.44, date: 'Mar 3, 2026', duration: '5h 22m', status: TradeStatus.Closed, riskReward: '1:2.1' },
+  { id: 'T-008', symbol: 'SOL/USD', direction: DashboardTradeDirection.Short, entryPrice: '181.40', exitPrice: '176.90', pnl: '+$450.00', pnlPercent: 2.48, date: 'Mar 2, 2026', duration: '3h 18m', status: TradeStatus.Closed, riskReward: '1:2.5' },
+  { id: 'T-009', symbol: 'AAPL', direction: DashboardTradeDirection.Long, entryPrice: '187.60', exitPrice: '190.30', pnl: '+$270.00', pnlPercent: 1.44, date: 'Mar 2, 2026', duration: '1d 4h', status: TradeStatus.Closed, riskReward: '1:1.8' },
+  { id: 'T-010', symbol: 'TSLA', direction: DashboardTradeDirection.Long, entryPrice: '238.50', exitPrice: '245.70', pnl: '+$720.00', pnlPercent: 3.02, date: 'Mar 1, 2026', duration: '6h 55m', status: TradeStatus.Closed, riskReward: '1:2.6' },
 ];

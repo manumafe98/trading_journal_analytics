@@ -15,9 +15,25 @@ import {
   MonthlyPerformance,
   CommissionImpact,
   SwapImpact,
+  TradeResult,
+  StreakType,
 } from '@/data/analytics/types';
 
 // ── Utility Helpers ──────────────────────────────────────────────────────────
+
+/** Type guard to narrow `pnl` from `number | null` to `number` */
+function hasPnl(trade: JournalTrade): trade is JournalTrade & { pnl: number } {
+  return trade.pnl !== null;
+}
+
+/** Get-or-create helper for Map to avoid non-null assertions */
+function getOrCreate<K, V>(map: Map<K, V>, key: K, factory: () => V): V {
+  const existing = map.get(key);
+  if (existing !== undefined) return existing;
+  const value = factory();
+  map.set(key, value);
+  return value;
+}
 
 /** Parse duration string "Xh Ym" to total minutes */
 function parseDurationToMinutes(duration: string): number {
@@ -96,42 +112,42 @@ function getSession(argHour: number): string[] {
 
 /** Win rate calculation excluding break even trades */
 function calcWinRate(trades: JournalTrade[]): number {
-  const eligible = trades.filter(t => t.result !== 'Break Even');
+  const eligible = trades.filter(({ result }) => result !== TradeResult.BreakEven);
   if (eligible.length === 0) return 0;
-  const wins = eligible.filter(t => t.result === 'Take Profit').length;
+  const wins = eligible.filter(({ result }) => result === TradeResult.TakeProfit).length;
   return round((wins / eligible.length) * 100, 1);
 }
 
 // ── Section Computations ─────────────────────────────────────────────────────
 
 function computeGeneralSummary(trades: JournalTrade[]): GeneralSummary {
-  const wins = trades.filter(t => t.result === 'Take Profit');
-  const losses = trades.filter(t => t.result === 'Stop Loss');
-  const breakEvens = trades.filter(t => t.result === 'Break Even');
+  const wins = trades.filter(({ result }) => result === TradeResult.TakeProfit);
+  const losses = trades.filter(({ result }) => result === TradeResult.StopLoss);
+  const breakEvens = trades.filter(({ result }) => result === TradeResult.BreakEven);
 
-  const eligible = trades.filter(t => t.result !== 'Break Even');
+  const eligible = trades.filter(({ result }) => result !== TradeResult.BreakEven);
   const winRate = eligible.length > 0 ? round((wins.length / eligible.length) * 100, 1) : 0;
 
-  const pnlTrades = trades.filter(t => t.pnl !== null);
-  const totalGrossPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
-  const totalCommissions = trades.reduce((sum, t) => sum + t.commission, 0);
+  const pnlTrades = trades.filter(hasPnl);
+  const totalGrossPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0);
+  const totalCommissions = trades.reduce((sum, { commission }) => sum + commission, 0);
   const totalNetPnl = totalGrossPnl - totalCommissions;
 
   const avgPnl = pnlTrades.length > 0 ? round(totalNetPnl / pnlTrades.length) : 0;
 
-  const pnlValues = pnlTrades.map(t => t.pnl!);
+  const pnlValues = pnlTrades.map(({ pnl }) => pnl);
   const largestWin = pnlValues.length > 0 ? Math.max(...pnlValues) : 0;
   const largestLoss = pnlValues.length > 0 ? Math.min(...pnlValues) : 0;
 
-  const durations = trades.map(t => parseDurationToMinutes(t.duration));
+  const durations = trades.map(({ duration }) => parseDurationToMinutes(duration));
   const avgDuration = durations.length > 0 ? round(durations.reduce((a, b) => a + b, 0) / durations.length, 0) : 0;
 
   const avgRR = trades.length > 0
-    ? round(trades.reduce((sum, t) => sum + t.riskReward, 0) / trades.length, 2)
+    ? round(trades.reduce((sum, { riskReward }) => sum + riskReward, 0) / trades.length, 2)
     : 0;
 
-  const grossWins = wins.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
-  const grossLosses = Math.abs(losses.reduce((sum, t) => sum + (t.pnl ?? 0), 0));
+  const grossWins = wins.reduce((sum, { pnl }) => sum + (pnl ?? 0), 0);
+  const grossLosses = Math.abs(losses.reduce((sum, { pnl }) => sum + (pnl ?? 0), 0));
   const profitFactor = grossLosses > 0 ? round(grossWins / grossLosses, 2) : 0;
 
   return {
@@ -159,12 +175,12 @@ function computeStreaks(trades: JournalTrade[]): StreaksData {
   let currentWinStreak = 0;
   let currentLossStreak = 0;
 
-  for (const trade of sorted) {
-    if (trade.result === 'Take Profit') {
+  for (const { result } of sorted) {
+    if (result === TradeResult.TakeProfit) {
       currentWinStreak++;
       currentLossStreak = 0;
       longestWinStreak = Math.max(longestWinStreak, currentWinStreak);
-    } else if (trade.result === 'Stop Loss') {
+    } else if (result === TradeResult.StopLoss) {
       currentLossStreak++;
       currentWinStreak = 0;
       longestLossStreak = Math.max(longestLossStreak, currentLossStreak);
@@ -173,10 +189,10 @@ function computeStreaks(trades: JournalTrade[]): StreaksData {
   }
 
   const currentStreak = currentWinStreak > 0
-    ? { type: 'win' as const, count: currentWinStreak }
+    ? { type: StreakType.Win, count: currentWinStreak }
     : currentLossStreak > 0
-      ? { type: 'loss' as const, count: currentLossStreak }
-      : { type: 'none' as const, count: 0 };
+      ? { type: StreakType.Loss, count: currentLossStreak }
+      : { type: StreakType.None, count: 0 };
 
   return {
     longest_win_streak: longestWinStreak,
@@ -188,15 +204,14 @@ function computeStreaks(trades: JournalTrade[]): StreaksData {
 function computePairStats(trades: JournalTrade[]): { best: PairStats[]; worst: PairStats[] } {
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
-    if (!groups.has(t.pair)) groups.set(t.pair, []);
-    groups.get(t.pair)!.push(t);
+    getOrCreate(groups, t.pair, () => []).push(t);
   }
 
   const stats: PairStats[] = [];
   for (const [pair, pairTrades] of groups) {
-    const pnlTrades = pairTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - pairTrades.reduce((sum, t) => sum + t.commission, 0);
-    const avgRR = round(pairTrades.reduce((sum, t) => sum + t.riskReward, 0) / pairTrades.length, 2);
+    const pnlTrades = pairTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - pairTrades.reduce((sum, { commission }) => sum + commission, 0);
+    const avgRR = round(pairTrades.reduce((sum, { riskReward }) => sum + riskReward, 0) / pairTrades.length, 2);
 
     stats.push({
       pair,
@@ -221,19 +236,17 @@ function computeCurrencyStats(trades: JournalTrade[]): { best: CurrencyStats[]; 
   for (const t of trades) {
     const [base, quote] = t.pair.split('/');
     if (base) {
-      if (!groups.has(base)) groups.set(base, []);
-      groups.get(base)!.push(t);
+      getOrCreate(groups, base, () => []).push(t);
     }
     if (quote) {
-      if (!groups.has(quote)) groups.set(quote, []);
-      groups.get(quote)!.push(t);
+      getOrCreate(groups, quote, () => []).push(t);
     }
   }
 
   const stats: CurrencyStats[] = [];
   for (const [currency, currTrades] of groups) {
-    const pnlTrades = currTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - currTrades.reduce((sum, t) => sum + t.commission, 0);
+    const pnlTrades = currTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - currTrades.reduce((sum, { commission }) => sum + commission, 0);
 
     stats.push({
       currency,
@@ -255,15 +268,14 @@ function computeDayStats(trades: JournalTrade[]): { best: DayStats[]; worst: Day
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
     const day = getDayOfWeek(t.date);
-    if (!groups.has(day)) groups.set(day, []);
-    groups.get(day)!.push(t);
+    getOrCreate(groups, day, () => []).push(t);
   }
 
   const stats: DayStats[] = [];
   for (const [day, dayTrades] of groups) {
-    const pnlTrades = dayTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - dayTrades.reduce((sum, t) => sum + t.commission, 0);
-    const avgRR = round(dayTrades.reduce((sum, t) => sum + t.riskReward, 0) / dayTrades.length, 2);
+    const pnlTrades = dayTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - dayTrades.reduce((sum, { commission }) => sum + commission, 0);
+    const avgRR = round(dayTrades.reduce((sum, { riskReward }) => sum + riskReward, 0) / dayTrades.length, 2);
 
     stats.push({
       day,
@@ -284,14 +296,13 @@ function computeHourStats(trades: JournalTrade[]): { best: HourStats[]; worst: H
   for (const t of trades) {
     const { hours } = parseExecutionTime(t.executionTime);
     const hourLabel = `${hours.toString().padStart(2, '0')}:00`;
-    if (!groups.has(hourLabel)) groups.set(hourLabel, []);
-    groups.get(hourLabel)!.push(t);
+    getOrCreate(groups, hourLabel, () => []).push(t);
   }
 
   const stats: HourStats[] = [];
   for (const [hour, hourTrades] of groups) {
-    const pnlTrades = hourTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - hourTrades.reduce((sum, t) => sum + t.commission, 0);
+    const pnlTrades = hourTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - hourTrades.reduce((sum, { commission }) => sum + commission, 0);
 
     stats.push({
       hour,
@@ -315,16 +326,15 @@ function computeSessionStats(trades: JournalTrade[]): SessionStats[] {
     const { hours } = parseExecutionTime(t.executionTime);
     const sessions = getSession(hours);
     for (const session of sessions) {
-      if (!groups.has(session)) groups.set(session, []);
-      groups.get(session)!.push(t);
+      getOrCreate(groups, session, () => []).push(t);
     }
   }
 
   const stats: SessionStats[] = [];
   for (const [session, sessionTrades] of groups) {
-    const pnlTrades = sessionTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - sessionTrades.reduce((sum, t) => sum + t.commission, 0);
-    const avgRR = round(sessionTrades.reduce((sum, t) => sum + t.riskReward, 0) / sessionTrades.length, 2);
+    const pnlTrades = sessionTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - sessionTrades.reduce((sum, { commission }) => sum + commission, 0);
+    const avgRR = round(sessionTrades.reduce((sum, { riskReward }) => sum + riskReward, 0) / sessionTrades.length, 2);
 
     stats.push({
       session,
@@ -341,16 +351,15 @@ function computeSessionStats(trades: JournalTrade[]): SessionStats[] {
 function computeStyleStats(trades: JournalTrade[]): StyleStats[] {
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
-    if (!groups.has(t.style)) groups.set(t.style, []);
-    groups.get(t.style)!.push(t);
+    getOrCreate(groups, t.style, () => []).push(t);
   }
 
   const stats: StyleStats[] = [];
   for (const [style, styleTrades] of groups) {
-    const pnlTrades = styleTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - styleTrades.reduce((sum, t) => sum + t.commission, 0);
-    const avgRR = round(styleTrades.reduce((sum, t) => sum + t.riskReward, 0) / styleTrades.length, 2);
-    const durations = styleTrades.map(t => parseDurationToMinutes(t.duration));
+    const pnlTrades = styleTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - styleTrades.reduce((sum, { commission }) => sum + commission, 0);
+    const avgRR = round(styleTrades.reduce((sum, { riskReward }) => sum + riskReward, 0) / styleTrades.length, 2);
+    const durations = styleTrades.map(({ duration }) => parseDurationToMinutes(duration));
     const avgDuration = round(durations.reduce((a, b) => a + b, 0) / durations.length, 0);
 
     stats.push({
@@ -369,15 +378,14 @@ function computeStyleStats(trades: JournalTrade[]): StyleStats[] {
 function computeStrategyStats(trades: JournalTrade[]): StrategyStats[] {
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
-    if (!groups.has(t.strategy)) groups.set(t.strategy, []);
-    groups.get(t.strategy)!.push(t);
+    getOrCreate(groups, t.strategy, () => []).push(t);
   }
 
   const stats: StrategyStats[] = [];
   for (const [strategy, stratTrades] of groups) {
-    const pnlTrades = stratTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - stratTrades.reduce((sum, t) => sum + t.commission, 0);
-    const avgRR = round(stratTrades.reduce((sum, t) => sum + t.riskReward, 0) / stratTrades.length, 2);
+    const pnlTrades = stratTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - stratTrades.reduce((sum, { commission }) => sum + commission, 0);
+    const avgRR = round(stratTrades.reduce((sum, { riskReward }) => sum + riskReward, 0) / stratTrades.length, 2);
 
     stats.push({
       strategy,
@@ -394,15 +402,14 @@ function computeStrategyStats(trades: JournalTrade[]): StrategyStats[] {
 function computeDirectionStats(trades: JournalTrade[]): DirectionStats[] {
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
-    if (!groups.has(t.direction)) groups.set(t.direction, []);
-    groups.get(t.direction)!.push(t);
+    getOrCreate(groups, t.direction, () => []).push(t);
   }
 
   const stats: DirectionStats[] = [];
   for (const [direction, dirTrades] of groups) {
-    const pnlTrades = dirTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - dirTrades.reduce((sum, t) => sum + t.commission, 0);
-    const avgRR = round(dirTrades.reduce((sum, t) => sum + t.riskReward, 0) / dirTrades.length, 2);
+    const pnlTrades = dirTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - dirTrades.reduce((sum, { commission }) => sum + commission, 0);
+    const avgRR = round(dirTrades.reduce((sum, { riskReward }) => sum + riskReward, 0) / dirTrades.length, 2);
 
     stats.push({
       direction,
@@ -417,20 +424,19 @@ function computeDirectionStats(trades: JournalTrade[]): DirectionStats[] {
 }
 
 function computeRiskAnalysis(trades: JournalTrade[]): RiskAnalysis {
-  const avgRisk = round(trades.reduce((sum, t) => sum + t.risk, 0) / trades.length, 2);
+  const avgRisk = round(trades.reduce((sum, { risk }) => sum + risk, 0) / trades.length, 2);
 
   // Group by risk level
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
     const level = `${t.risk}%`;
-    if (!groups.has(level)) groups.set(level, []);
-    groups.get(level)!.push(t);
+    getOrCreate(groups, level, () => []).push(t);
   }
 
   const byRiskLevel: { risk_level: string; total_trades: number; win_rate: number; net_pnl: number }[] = [];
   for (const [level, riskTrades] of groups) {
-    const pnlTrades = riskTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - riskTrades.reduce((sum, t) => sum + t.commission, 0);
+    const pnlTrades = riskTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - riskTrades.reduce((sum, { commission }) => sum + commission, 0);
 
     byRiskLevel.push({
       risk_level: level,
@@ -450,14 +456,13 @@ function computeMonthlyPerformance(trades: JournalTrade[]): MonthlyPerformance {
   const groups = new Map<string, JournalTrade[]>();
   for (const t of trades) {
     const month = getMonthLabel(t.date);
-    if (!groups.has(month)) groups.set(month, []);
-    groups.get(month)!.push(t);
+    getOrCreate(groups, month, () => []).push(t);
   }
 
   const data: { month: string; total_trades: number; win_rate: number; net_pnl: number }[] = [];
   for (const [month, monthTrades] of groups) {
-    const pnlTrades = monthTrades.filter(t => t.pnl !== null);
-    const netPnl = pnlTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) - monthTrades.reduce((sum, t) => sum + t.commission, 0);
+    const pnlTrades = monthTrades.filter(hasPnl);
+    const netPnl = pnlTrades.reduce((sum, { pnl }) => sum + pnl, 0) - monthTrades.reduce((sum, { commission }) => sum + commission, 0);
 
     data.push({
       month,
@@ -476,8 +481,8 @@ function computeMonthlyPerformance(trades: JournalTrade[]): MonthlyPerformance {
 }
 
 function computeCommissionImpact(trades: JournalTrade[]): CommissionImpact {
-  const totalCommissions = trades.reduce((sum, t) => sum + t.commission, 0);
-  const grossPnl = trades.filter(t => t.pnl !== null).reduce((sum, t) => sum + Math.abs(t.pnl!), 0);
+  const totalCommissions = trades.reduce((sum, { commission }) => sum + commission, 0);
+  const grossPnl = trades.filter(hasPnl).reduce((sum, { pnl }) => sum + Math.abs(pnl), 0);
   const percentOfGross = grossPnl > 0 ? round((totalCommissions / grossPnl) * 100, 2) : 0;
   const avgCommission = trades.length > 0 ? round(totalCommissions / trades.length, 2) : 0;
 
@@ -489,8 +494,8 @@ function computeCommissionImpact(trades: JournalTrade[]): CommissionImpact {
 }
 
 function computeSwapImpact(trades: JournalTrade[]): SwapImpact {
-  const totalSwap = trades.reduce((sum, t) => sum + t.swap, 0);
-  const grossPnl = trades.filter(t => t.pnl !== null).reduce((sum, t) => sum + Math.abs(t.pnl!), 0);
+  const totalSwap = trades.reduce((sum, { swap }) => sum + swap, 0);
+  const grossPnl = trades.filter(hasPnl).reduce((sum, { pnl }) => sum + Math.abs(pnl), 0);
   const percentOfGross = grossPnl > 0 ? round((Math.abs(totalSwap) / grossPnl) * 100, 2) : 0;
   const avgSwap = trades.length > 0 ? round(totalSwap / trades.length, 2) : 0;
 

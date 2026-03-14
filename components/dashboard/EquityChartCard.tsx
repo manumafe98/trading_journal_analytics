@@ -20,11 +20,12 @@ export function EquityChartCard({ className = '' }: EquityChartCardProps) {
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900/50 dark:hover:border-gray-700',
+        'group relative overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 p-5 transition-all duration-500 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]',
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-primary/5 dark:to-transparent" />
+      {/* Subtle glow effect on hover via gradient */}
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
@@ -99,14 +100,22 @@ export function EquityChartCard({ className = '' }: EquityChartCardProps) {
   );
 }
 
-// ── Custom Tooltip ───────────────────────────────────────────────────────────
+interface TooltipPayloadItem {
+  value: number;
+}
 
-function CustomTooltip({ active, payload, label }: any) {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-900">
-      <div className="mb-1 text-xs text-gray-400">{label}</div>
+    <div className="rounded-lg border border-gray-200/50 bg-white/80 backdrop-blur-md px-3 py-2 shadow-xl dark:border-white/10 dark:bg-[#151719]/90">
+      <div className="mb-1 text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</div>
       <div className="text-sm font-bold text-gray-900 dark:text-gray-50">
         ${payload[0].value.toLocaleString()}
       </div>

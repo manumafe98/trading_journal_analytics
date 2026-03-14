@@ -17,13 +17,9 @@ import {
 import { GeneralSummary } from '@/data/analytics/types';
 
 import { StatsCard } from '@/components/shared';
+import { formatDuration } from '@/lib/utils';
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.round(minutes % 60);
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
-}
+
 
 interface GeneralSummaryGridProps {
   data: GeneralSummary;

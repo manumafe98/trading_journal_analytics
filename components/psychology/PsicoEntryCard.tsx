@@ -10,28 +10,37 @@ interface PsicoEntryCardProps {
 }
 
 export function PsicoEntryCard({ entry, onClick }: PsicoEntryCardProps) {
+  const {
+    emotionBeforeChart,
+    emotionBeforeExecution,
+    emotionDuringTrade,
+    emotionAfterTrade,
+    linkedTradeId,
+    createdAt,
+  } = entry;
+
   // A simple completion logic: check how many fields have content out of the most important 4 sections
-  const hasA = entry.emotionBeforeChart.trim() !== '';
-  const hasC = entry.emotionBeforeExecution.trim() !== '';
-  const hasD = entry.emotionDuringTrade.trim() !== '';
-  const hasE = entry.emotionAfterTrade.trim() !== '';
+  const hasA = emotionBeforeChart.trim() !== '';
+  const hasC = emotionBeforeExecution.trim() !== '';
+  const hasD = emotionDuringTrade.trim() !== '';
+  const hasE = emotionAfterTrade.trim() !== '';
   
   const completedSections = [hasA, hasC, hasD, hasE].filter(Boolean).length;
   const progressPercent = (completedSections / 4) * 100;
 
   // Find preview text
   const previewText = 
-    entry.emotionBeforeChart || 
-    entry.emotionBeforeExecution || 
-    entry.emotionDuringTrade || 
-    entry.emotionAfterTrade || 
+    emotionBeforeChart || 
+    emotionBeforeExecution || 
+    emotionDuringTrade || 
+    emotionAfterTrade || 
     '...';
 
   // Find linked trade if any
-  const linkedTrade = sampleTrades.find(t => t.id === entry.linkedTradeId);
+  const linkedTrade = sampleTrades.find(({ id }) => id === linkedTradeId);
 
   // Format date safely
-  const dateObj = new Date(entry.createdAt);
+  const dateObj = new Date(createdAt);
   const dateStr = isNaN(dateObj.getTime()) ? 'Unknown Date' : format(dateObj, 'MMM d, yyyy HH:mm');
 
   return (
@@ -43,9 +52,9 @@ export function PsicoEntryCard({ entry, onClick }: PsicoEntryCardProps) {
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
           {dateStr}
         </span>
-        {entry.linkedTradeId ? (
+        {linkedTradeId ? (
           <span className="inline-flex items-center rounded-md bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
-            {linkedTrade ? `${linkedTrade.pair} ${linkedTrade.direction}` : entry.linkedTradeId}
+            {linkedTrade ? `${linkedTrade.pair} ${linkedTrade.direction}` : linkedTradeId}
           </span>
         ) : (
           <span className="text-xs text-gray-400 dark:text-gray-600">Unlinked</span>

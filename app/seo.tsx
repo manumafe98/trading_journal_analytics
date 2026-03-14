@@ -1,13 +1,11 @@
 import { Metadata } from 'next';
 import { siteConfig } from '@/data/config/site.settings';
 
-interface PageSEOProps {
+interface PageSEOProps extends Partial<Metadata> {
   title: string;
   description?: string;
   image?: string;
   canonical?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
 }
 
 export function genPageMetadata({

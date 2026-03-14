@@ -5,7 +5,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "composite": true,
@@ -23,14 +23,14 @@
       "@/css/*": ["css/*"],
       "@/lib/*": ["lib/*"],
       "@/theme/*": ["theme/*"],
-      "@/app/*": ["app/*"]
+      "@/app/*": ["app/*"],
+      "@/hooks/*": ["hooks/*"]
     },
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "strictNullChecks": true
+    ]
   },
   "include": [
     "next-env.d.ts",

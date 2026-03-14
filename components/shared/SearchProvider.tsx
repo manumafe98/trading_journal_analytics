@@ -1,10 +1,10 @@
 'use client';
-
+import { ReactNode } from 'react';
 import { KBarSearchProvider } from '@shipixen/pliny/search/KBar';
 import { useRouter } from 'next/navigation';
 import { searchLinks } from '@/data/config/searchLinks';
 
-export const SearchProvider = ({ children }) => {
+export const SearchProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   const makeRootPath = (path: string) => {

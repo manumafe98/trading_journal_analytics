@@ -51,10 +51,10 @@ function TextAreaField({
         <textarea
           rows={1}
           placeholder={placeholder}
-          className={`block w-full rounded-lg border ${hasContent ? 'border-gray-300 dark:border-gray-600' : 'border-gray-200 dark:border-gray-800'} bg-gray-50/50 dark:bg-gray-900/30 px-4 py-3 text-sm placeholder-gray-400 transition-all duration-150 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/50 dark:text-gray-100 dark:focus:bg-gray-900 resize-none overflow-hidden pr-10 hover:border-gray-300 dark:hover:border-gray-700`}
+          className={`block w-full rounded-lg border ${hasContent ? 'border-primary-500/30 dark:border-primary-500/20 shadow-[0_0_15px_rgba(163,230,96,0.05)]' : 'border-gray-200/50 dark:border-white/5'} bg-white/50 dark:bg-black/20 px-4 py-3 text-sm placeholder-gray-400 transition-all duration-300 focus:border-primary-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500/20 dark:text-gray-100 dark:focus:bg-[#0c0d10]/90 resize-none overflow-hidden pr-10 hover:border-gray-300/80 dark:hover:border-white/10 shadow-inner`}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onInput={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+          onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
             e.currentTarget.style.height = 'auto';
             e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
           }}
@@ -213,7 +213,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 1: Before Chart */}
-        <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm transition-all duration-200 hover:shadow-md border-l-4 ${sections[0].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[0].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 0 ? -1 : 0)}
@@ -252,7 +252,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 2: Before Execution */}
-        <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm transition-all duration-200 hover:shadow-md border-l-4 ${sections[1].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[1].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 1 ? -1 : 1)}
@@ -319,7 +319,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 3: During Trade */}
-        <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm transition-all duration-200 hover:shadow-md border-l-4 ${sections[2].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[2].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 2 ? -1 : 2)}
@@ -386,7 +386,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 4: After Trade */}
-        <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm transition-all duration-200 hover:shadow-md border-l-4 ${sections[3].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[3].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 3 ? -1 : 3)}
