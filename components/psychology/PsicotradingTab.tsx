@@ -15,7 +15,7 @@ export function PsicotradingTab() {
   );
 
   return (
-    <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-12 pb-12">
+    <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-200 space-y-12 pb-12">
       <section>
         <div className="mb-4 flex items-center justify-between">
           <div>

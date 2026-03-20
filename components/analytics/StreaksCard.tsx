@@ -22,8 +22,8 @@ export function StreaksCard({ data, summary }: StreaksCardProps) {
       : 'bg-gray-500/10 border-gray-500/20';
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 transition-all duration-500 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
+    <div className="group relative overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 transition-all duration-200 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
       <div className="relative border-b border-gray-200/50 px-5 py-4 dark:border-white/5">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-50 uppercase tracking-widest text-[11px]">Streaks</h2>
         <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{summary}</p>

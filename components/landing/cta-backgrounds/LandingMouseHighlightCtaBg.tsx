@@ -66,7 +66,7 @@ export const LandingMouseHighlightCtaBg = ({
   return (
     <div
       ref={domRef}
-      className={clsx('w-full h-full transition-all duration-500', className)}
+      className={clsx('w-full h-full transition-all duration-200', className)}
       style={{
         background: `radial-gradient(${size} at ${mousePosition.x}px ${
           mousePosition.y

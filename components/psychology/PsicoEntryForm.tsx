@@ -206,14 +206,14 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
             <div 
-              className="h-full bg-primary-500 transition-all duration-500 ease-out dark:bg-primary-400"
+              className="h-full bg-primary-500 transition-all duration-200 ease-out dark:bg-primary-400"
               style={{ width: `${(totalFilled / 4) * 100}%` }}
             />
           </div>
         </div>
 
         {/* SECTION 1: Before Chart */}
-        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[0].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-200 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[0].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 0 ? -1 : 0)}
@@ -252,7 +252,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 2: Before Execution */}
-        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[1].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-200 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[1].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 1 ? -1 : 1)}
@@ -319,7 +319,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 3: During Trade */}
-        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[2].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-200 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[2].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 2 ? -1 : 2)}
@@ -386,7 +386,7 @@ export function PsicoEntryForm({ initialData, onSubmit, onCancel }: PsicoEntryFo
         </div>
 
         {/* SECTION 4: After Trade */}
-        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-500 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[3].colorClass}`}>
+        <div className={`group overflow-hidden rounded-xl border border-gray-200/50 bg-white/60 dark:bg-[#121417]/80 dark:border-white/[0.05] backdrop-blur-xl shadow-lg transition-all duration-200 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${sections[3].colorClass}`}>
           <button 
             type="button" 
             onClick={() => setExpandedSection(expandedSection === 3 ? -1 : 3)}

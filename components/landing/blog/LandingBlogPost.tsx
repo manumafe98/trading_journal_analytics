@@ -86,7 +86,7 @@ export const LandingBlogPost = ({
               src={firstImage}
               alt={title || 'Blog post image'}
               fill
-              className="object-cover transition-transform group-hover/post:scale-105 duration-500"
+              className="object-cover transition-transform group-hover/post:scale-105 duration-200"
             />
           </Link>
         </div>

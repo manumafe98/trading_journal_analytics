@@ -64,7 +64,7 @@ export function LandingProductCard({
             src={imageSrc}
             alt={imageAlt || title}
             fill
-            className="object-cover group-hover/product:scale-105 transition-all duration-500"
+            className="object-cover group-hover/product:scale-105 transition-all duration-200"
           />
         </div>
       )}

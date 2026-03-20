@@ -56,8 +56,8 @@ export function AnalyticsCard<T>({
   className = '',
 }: AnalyticsCardProps<T>) {
   return (
-    <div className={`group relative overflow-hidden flex flex-col rounded-xl border border-gray-200/50 bg-white/60 transition-all duration-500 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] ${className}`}>
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
+    <div className={`group relative overflow-hidden flex flex-col rounded-xl border border-gray-200/50 bg-white/60 transition-all duration-200 hover:border-gray-300 hover:shadow-xl dark:border-white/[0.05] dark:bg-[#121417]/80 dark:backdrop-blur-md dark:hover:border-white/10 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] ${className}`}>
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:bg-[radial-gradient(circle_at_top_right,rgba(163,230,96,0.05),transparent_50%)]" />
       <div className="relative border-b border-gray-200/50 px-5 py-4 dark:border-white/5 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
